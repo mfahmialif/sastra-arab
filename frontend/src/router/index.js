@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LandingIndex from '../views/public/landing/Index.vue'
 import NewsPage from '../views/public/news/Index.vue'
 import DetailPage from '../views/public/news/Detail.vue'
+import PageDetail from '../views/public/pages/Detail.vue'
 import ContactPage from '../views/public/contact/Index.vue'
 import Login from '../views/public/login/Index.vue'
 import Register from '../views/public/register/Index.vue'
@@ -37,6 +38,12 @@ const routes = [
         name: 'DetailNews',
         component: DetailPage,
         meta: { title: `${appName} - Detail News`, detailType: 'news', publicActive: 'news' }
+      },
+      {
+        path: 'pages/:slug',
+        name: 'PublicPage',
+        component: PageDetail,
+        meta: { title: `${appName} - Page`, publicActive: 'page' }
       },
       {
         path: 'contact',
@@ -110,6 +117,30 @@ const routes = [
         name: 'AdminNewsCategories',
         component: () => import('../views/admin/newsCategories/Index.vue'),
         meta: { title: `${appName} - Kategori News`, pageTitle: 'Kategori News', requiresAuth: true }
+      },
+      {
+        path: 'pages',
+        name: 'AdminPages',
+        component: () => import('../views/admin/pages/Index.vue'),
+        meta: { title: `${appName} - Pages`, pageTitle: 'Pages', requiresAuth: true }
+      },
+      {
+        path: 'pages/create',
+        name: 'AdminPagesCreate',
+        component: () => import('../views/admin/pages/Form.vue'),
+        meta: { title: `${appName} - Tambah Page`, pageTitle: 'Tambah Page', requiresAuth: true }
+      },
+      {
+        path: 'pages/:id/edit',
+        name: 'AdminPagesEdit',
+        component: () => import('../views/admin/pages/Form.vue'),
+        meta: { title: `${appName} - Edit Page`, pageTitle: 'Edit Page', requiresAuth: true }
+      },
+      {
+        path: 'menus',
+        name: 'AdminMenus',
+        component: () => import('../views/admin/menus/Index.vue'),
+        meta: { title: `${appName} - Manajemen Menu`, pageTitle: 'Manajemen Menu', requiresAuth: true }
       },
       {
         path: 'info-terkini',

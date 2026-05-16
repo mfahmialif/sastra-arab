@@ -73,7 +73,7 @@ async function fetchLatestNews() {
 
       return {
         id: normalized.id,
-        href: `/news/${normalized.id}`,
+        href: `/news/${normalized.slug || normalized.id}`,
         day: date.day,
         month: date.month,
         category: normalized.categoryName,

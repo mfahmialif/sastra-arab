@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KepalaPenulisPortalController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\NewsCategoryController;
 use App\Http\Controllers\NewsCommentController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PenulisPortalController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SettingController;
@@ -21,6 +23,8 @@ Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 Route::get('/news', [NewsController::class, 'index']);
 Route::get('/news-categories', [NewsController::class, 'categories']);
 Route::get('/news/{news}', [NewsController::class, 'show']);
+Route::get('/public/pages/{slug}', [PageController::class, 'publicShow']);
+Route::get('/navigation/primary', [MenuController::class, 'primary']);
 
 Route::get('/news/{news}/comments', [NewsCommentController::class, 'index']);
 Route::post('/news/{news}/comments', [NewsCommentController::class, 'store']);
@@ -57,6 +61,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('users', UserController::class);
+    Route::apiResource('pages', PageController::class);
+    Route::get('/menus/primary/items', [MenuController::class, 'items']);
+    Route::post('/menus/primary/items', [MenuController::class, 'storeItem']);
+    Route::put('/menus/primary/items/{menuItem}', [MenuController::class, 'updateItem']);
+    Route::delete('/menus/primary/items/{menuItem}', [MenuController::class, 'destroyItem']);
+    Route::post('/menus/primary/reorder', [MenuController::class, 'reorder']);
+    Route::get('/menus/primary/options', [MenuController::class, 'options']);
     Route::get('/settings/general', [SettingController::class, 'general']);
     Route::post('/settings/general', [SettingController::class, 'updateGeneral']);
     Route::get('/settings/email', [SettingController::class, 'email']);

@@ -16,6 +16,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '../axios'
 import Footer from '../components/layouts/public/Footer.vue'
 import Navbar from '../components/layouts/public/Navbar.vue'
 import Preloader from '../components/layouts/public/Preloader.vue'
@@ -30,19 +31,25 @@ const activeSection = ref('home')
 let sectionElements = []
 let ticking = false
 
-const navItems = [
+const fallbackNavItems = [
   { label: 'Home', href: '/', id: 'home' },
   { label: 'Profil', href: '/#about', id: 'about', sectionId: 'about' },
   { label: 'Akademik', href: '/#services', id: 'services', sectionId: 'services' },
   { label: 'News', href: '/news', id: 'news' },
   { label: 'Contact', href: '/contact', id: 'contact' },
 ]
+const navItems = ref(fallbackNavItems)
 
 const isLanding = computed(() => route.name === 'Landing')
 
 function updateRouteActiveSection() {
   if (route.path.startsWith('/news')) {
     activeSection.value = 'news'
+    return
+  }
+
+  if (route.path.startsWith('/pages')) {
+    activeSection.value = route.path
     return
   }
 
@@ -57,7 +64,7 @@ function updateRouteActiveSection() {
 }
 
 function collectLandingSections() {
-  sectionElements = navItems
+  sectionElements = navItems.value
     .filter((item) => item.sectionId || item.id === 'home')
     .map((item) => document.getElementById(item.sectionId || item.id))
     .filter(Boolean)
@@ -102,9 +109,34 @@ function refreshPublicNavigation() {
   }
 }
 
+function normalizeMenuItem(item) {
+  const href = item.url || item.href || '/'
+  const hash = href.startsWith('/#') ? href.slice(2) : ''
+  const id = hash || (href === '/' ? 'home' : href.replace(/^\/+/, '').split('/')[0] || 'home')
+
+  return {
+    label: item.label,
+    href,
+    target: item.target || '_self',
+    id,
+    sectionId: hash || undefined,
+    children: (item.children || []).map(normalizeMenuItem),
+  }
+}
+
+async function loadNavigation() {
+  try {
+    const { data } = await api.get('/navigation/primary')
+    const items = (data || []).map(normalizeMenuItem)
+    navItems.value = items.length ? items : fallbackNavItems
+  } catch {
+    navItems.value = fallbackNavItems
+  }
+}
+
 onMounted(() => {
   initTheme()
-  refreshPublicNavigation()
+  loadNavigation().finally(refreshPublicNavigation)
 
   window.setTimeout(() => {
     loading.value = false
@@ -112,6 +144,10 @@ onMounted(() => {
 })
 
 watch(() => route.fullPath, () => {
+  refreshPublicNavigation()
+})
+
+watch(navItems, () => {
   refreshPublicNavigation()
 })
 

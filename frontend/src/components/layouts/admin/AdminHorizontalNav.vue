@@ -42,6 +42,8 @@ const navGroups = [
   {
     label: 'Website',
     items: [
+      { icon: 'web', label: 'Pages', route: '/administrator/pages' },
+      { icon: 'menu', label: 'Menu', route: '/administrator/menus' },
       { icon: 'person', label: 'Profile', route: '/administrator/profile' },
       { icon: 'settings', label: 'Pengaturan', route: '/administrator/pengaturan' },
     ],
@@ -52,6 +54,8 @@ function isActiveRoute(r) {
   return route.path === r
     || (r === '/administrator/news' && route.path.startsWith('/administrator/news/'))
     || (r === '/administrator/news-categories' && route.path.startsWith('/administrator/news-categories'))
+    || (r === '/administrator/pages' && route.path.startsWith('/administrator/pages'))
+    || (r === '/administrator/menus' && route.path.startsWith('/administrator/menus'))
 }
 </script>
 

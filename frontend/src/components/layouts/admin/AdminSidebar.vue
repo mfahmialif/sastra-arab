@@ -84,6 +84,8 @@ const navSections = [
   {
     label: 'Website',
     items: [
+      { icon: 'web', label: 'Pages', route: '/administrator/pages' },
+      { icon: 'menu', label: 'Manajemen Menu', route: '/administrator/menus' },
       { icon: 'person', label: 'Profile', route: '/administrator/profile' },
       { icon: 'settings', label: 'Pengaturan', route: '/administrator/pengaturan' },
     ],
@@ -94,6 +96,8 @@ function isActiveRoute(itemRoute) {
   return route.path === itemRoute
     || (itemRoute === '/administrator/news' && route.path.startsWith('/administrator/news/'))
     || (itemRoute === '/administrator/news-categories' && route.path.startsWith('/administrator/news-categories'))
+    || (itemRoute === '/administrator/pages' && route.path.startsWith('/administrator/pages'))
+    || (itemRoute === '/administrator/menus' && route.path.startsWith('/administrator/menus'))
 }
 
 function handleLogout() {

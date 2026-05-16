@@ -60,8 +60,11 @@ class NewsController extends Controller
         return $query->paginate($perPage);
     }
 
-    public function show(News $news)
+    public function show(string $news)
     {
+        $news = News::findBySlugOrId($news);
+        abort_unless($news, 404);
+
         return response()->json($news->load(['category', 'categories', 'author:id,name,email', 'creator:id,name,email']));
     }
 

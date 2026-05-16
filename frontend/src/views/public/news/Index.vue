@@ -93,7 +93,7 @@ function goToPage(page) {
 }
 
 function openDetail(item) {
-  router.push({ name: 'DetailNews', params: { id: item.id } })
+  router.push({ name: 'DetailNews', params: { id: item.slug || item.id } })
 }
 
 watch(searchQuery, () => {

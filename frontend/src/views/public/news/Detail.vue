@@ -218,7 +218,7 @@ async function loadRelated() {
       },
     })
     relatedNews.value = (data.data || [])
-      .filter((item) => String(item.id) !== String(route.params.id))
+      .filter((item) => String(item.id) !== String(newsItem.value?.id))
       .slice(0, 3)
       .map(normalizeNews)
   } catch {
@@ -239,7 +239,7 @@ async function copyLink() {
 }
 
 function openDetail(item) {
-  router.push({ name: 'DetailNews', params: { id: item.id } })
+  router.push({ name: 'DetailNews', params: { id: item.slug || item.id } })
 }
 
 function categoryList(item) {

@@ -11,10 +11,27 @@
         </span>
       </router-link>
 
-      <nav class="public-nav-links hidden items-center gap-7 text-[14px] font-bold md:flex">
-        <router-link v-for="item in items" :key="item.href" :to="item.href" class="nav-link" :class="{ active: activeSection === item.id }">
-          {{ item.label }}
-        </router-link>
+      <nav class="public-nav-links hidden items-center gap-2 text-[14px] font-bold md:flex">
+        <div v-for="item in items" :key="item.href" class="nav-item-wrap">
+          <a
+            v-if="isExternal(item.href)"
+            :href="item.href"
+            :target="item.target || '_self'"
+            :rel="item.target === '_blank' ? 'noopener noreferrer' : null"
+            class="nav-link"
+            :class="{ active: isActive(item) }"
+          >
+            <span>{{ item.label }}</span>
+            <span v-if="item.children?.length" class="nav-branch-arrow material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+          </a>
+          <router-link v-else :to="item.href" class="nav-link" :class="{ active: isActive(item) }">
+            <span>{{ item.label }}</span>
+            <span v-if="item.children?.length" class="nav-branch-arrow material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+          </router-link>
+          <div v-if="item.children?.length" class="nav-dropdown">
+            <NavbarDropdown :items="item.children" />
+          </div>
+        </div>
       </nav>
 
       <div class="hidden items-center gap-2 md:flex">
@@ -39,9 +56,44 @@
 
     <Transition name="mobile-menu">
       <div v-if="mobileOpen" class="public-mobile-panel mx-auto mt-3 max-w-7xl rounded-3xl p-4 shadow-2xl backdrop-blur-xl md:hidden">
-        <router-link v-for="item in items" :key="item.href" :to="item.href" @click="mobileOpen = false" class="public-mobile-link block rounded-2xl px-4 py-3 font-bold" :class="{ active: activeSection === item.id }">
-          {{ item.label }}
-        </router-link>
+        <div v-for="item in items" :key="item.href" class="mobile-menu-group">
+          <a
+            v-if="isExternal(item.href)"
+            :href="item.href"
+            :target="item.target || '_self'"
+            :rel="item.target === '_blank' ? 'noopener noreferrer' : null"
+            @click="mobileOpen = false"
+            class="public-mobile-link flex items-center justify-between gap-3 rounded-2xl px-4 py-3 font-bold"
+            :class="{ active: isActive(item) }"
+          >
+            <span>{{ item.label }}</span>
+            <span v-if="item.children?.length" class="mobile-branch-arrow material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+          </a>
+          <router-link v-else :to="item.href" @click="mobileOpen = false" class="public-mobile-link flex items-center justify-between gap-3 rounded-2xl px-4 py-3 font-bold" :class="{ active: isActive(item) }">
+            <span>{{ item.label }}</span>
+            <span v-if="item.children?.length" class="mobile-branch-arrow material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+          </router-link>
+          <div v-if="item.children?.length" class="ml-4 border-l border-white/10 pl-3">
+            <template v-for="child in flattenMenuChildren(item.children)" :key="`${child.depth}-${child.href}`">
+              <a
+                v-if="isExternal(child.href)"
+                :href="child.href"
+                :target="child.target || '_self'"
+                :rel="child.target === '_blank' ? 'noopener noreferrer' : null"
+                @click="mobileOpen = false"
+                class="public-mobile-link mt-1 flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-sm font-bold"
+                :style="{ marginLeft: `${child.depth * 0.75}rem` }"
+              >
+                <span>{{ child.label }}</span>
+                <span v-if="child.children?.length" class="mobile-branch-arrow material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+              </a>
+              <router-link v-else :to="child.href" @click="mobileOpen = false" class="public-mobile-link mt-1 flex items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-sm font-bold" :style="{ marginLeft: `${child.depth * 0.75}rem` }">
+                <span>{{ child.label }}</span>
+                <span v-if="child.children?.length" class="mobile-branch-arrow material-symbols-outlined" aria-hidden="true">keyboard_arrow_down</span>
+              </router-link>
+            </template>
+          </div>
+        </div>
         <button class="public-mobile-theme-toggle mt-2 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 font-black" type="button" @click="$emit('toggle-theme')">
           <span class="material-symbols-outlined text-[20px]">{{ theme === 'dark' ? 'light_mode' : 'dark_mode' }}</span>
           {{ theme === 'dark' ? 'Light Mode' : 'Dark Mode' }}
@@ -58,8 +110,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
+import NavbarDropdown from './NavbarDropdown.vue'
 
-defineProps({
+const props = defineProps({
   items: {
     type: Array,
     required: true,
@@ -108,6 +161,21 @@ const authLink = computed(() => {
     label: 'Sign In',
   }
 })
+
+function isExternal(href = '') {
+  return /^https?:\/\//i.test(href) || href.startsWith('mailto:') || href.startsWith('tel:')
+}
+
+function isActive(item) {
+  return props.activeSection === item.id || props.activeSection === item.href
+}
+
+function flattenMenuChildren(items = [], depth = 0) {
+  return items.flatMap((item) => [
+    { ...item, depth },
+    ...flattenMenuChildren(item.children || [], depth + 1),
+  ])
+}
 
 onMounted(() => {
   if (!authStore.hasCheckedSession) {
