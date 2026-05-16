@@ -4,6 +4,25 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
+/*
+|--------------------------------------------------------------------------
+| Auto-detect Environment File
+|--------------------------------------------------------------------------
+|
+| Jika server punya env variable APP_ENV=production,
+| maka Laravel akan load .env.production otomatis.
+| Set APP_ENV=production di hosting panel / server config.
+|
+*/
+$serverEnv = getenv('APP_ENV') ?: ($_SERVER['APP_ENV'] ?? $_ENV['APP_ENV'] ?? null);
+
+$envFile = match (true) {
+    $serverEnv === 'production'                             => '.env.production',
+    file_exists(dirname(__DIR__) . '/.env.production')
+        && !file_exists(dirname(__DIR__) . '/.env')         => '.env.production',
+    default                                                 => '.env',
+};
+
 $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__ . '/../routes/web.php',
@@ -21,6 +40,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->create();
+
+$app->loadEnvironmentFrom($envFile);
 
 /*
 |--------------------------------------------------------------------------
