@@ -1,7 +1,7 @@
 <template>
   <section class="bg-white py-20">
     <div class="mx-auto max-w-7xl px-5 lg:px-8">
-      <SectionHeader kicker="Kenapa Sastra Arab?" title="Ruang akademik untuk bahasa, sastra, budaya, dan tradisi keilmuan Arab." />
+      <SectionHeader :kicker="content.kicker" :title="content.title" />
 
       <div class="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         <article v-for="(item, index) in strengths" :key="item.title" class="feature-card" data-aos="fade-up" :data-aos-delay="(index % 3) * 90">
@@ -22,6 +22,10 @@ import SectionHeader from './_SectionHeader.vue'
 defineProps({
   strengths: {
     type: Array,
+    required: true,
+  },
+  content: {
+    type: Object,
     required: true,
   },
 })

@@ -1,7 +1,7 @@
 <template>
   <section class="bg-white py-20">
     <div class="mx-auto max-w-7xl px-5 lg:px-8">
-      <SectionHeader kicker="Testimoni Klien" title="Cerita penulis yang tumbuh bersama press." />
+      <SectionHeader :kicker="content.kicker" :title="content.title" />
 
       <div class="mt-10 grid gap-5 md:grid-cols-3">
         <article v-for="(testimonial, index) in testimonials" :key="testimonial.name" class="testimonial-card" data-aos="fade-up" :data-aos-delay="index * 100">
@@ -22,6 +22,10 @@ import SectionHeader from './_SectionHeader.vue'
 defineProps({
   testimonials: {
     type: Array,
+    required: true,
+  },
+  content: {
+    type: Object,
     required: true,
   },
 })

@@ -5,39 +5,36 @@
       <div class="reveal-up">
         <p class="mb-7 inline-flex items-center gap-3 rounded-full bg-slate-200/70 px-5 py-2 text-sm font-black tracking-[0.12em] text-slate-600 shadow-sm">
           <span class="size-2.5 rounded-full bg-sky-700"></span>
-          PROGRAM STUDI
+          {{ hero.eyebrow }}
         </p>
         <h1 class="max-w-4xl text-5xl font-black leading-[1.02] tracking-tight text-[#101418] sm:text-6xl lg:text-7xl">
-          Sastra Arab
+          {{ hero.main_title }}
         </h1>
         <p class="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
-          Website resmi Program Studi Sastra Arab untuk informasi akademik, berita, kegiatan mahasiswa, dan layanan komunikasi prodi.
+          {{ hero.description }}
         </p>
         <div class="mt-9 flex flex-wrap items-center gap-4">
-          <a href="#services" class="cta-primary">
-            Lihat Akademik
+          <a :href="hero.primary_href" class="cta-primary">
+            {{ hero.primary_label }}
             <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
           </a>
-          <a href="#flow" class="cta-secondary">
-            Kegiatan Prodi
+          <a :href="hero.secondary_href" class="cta-secondary">
+            {{ hero.secondary_label }}
             <span class="material-symbols-outlined text-[20px]">groups</span>
           </a>
         </div>
       </div>
 
       <div class="hero-card reveal-up delay-2">
-        <div class="relative overflow-hidden rounded-[2rem] bg-[#0b1020] shadow-2xl shadow-slate-900/25">
-          <img src="/img/hero-bg.jpg" alt="Kegiatan Program Studi Sastra Arab" class="h-[500px] w-full object-cover opacity-80" />
-          <div class="absolute inset-0 bg-linear-to-t from-[#0b1020] via-[#0b1020]/30 to-transparent"></div>
-          <div class="absolute bottom-0 left-0 right-0 p-7 text-white">
-            <p class="text-sm font-black uppercase tracking-[0.22em] text-sky-300">Arabic Literature</p>
-            <h2 class="mt-3 text-3xl font-black leading-tight">Menguatkan bahasa, sastra, dan tradisi keilmuan Arab.</h2>
+        <div class="hero-photo-frame">
+          <div v-if="isHeroLoading || !heroImage" class="hero-photo-skeleton" aria-hidden="true">
+            <span></span>
           </div>
-          <div class="floating-card">
-            <span class="material-symbols-outlined text-sky-500">verified</span>
+          <img v-else :src="heroImage" :alt="heroAlt" class="hero-photo-image" />
+          <div v-if="hasHeroText" class="hero-photo-caption">
             <div>
-              <p class="text-sm font-black text-slate-950">Akademik aktif</p>
-              <p class="text-xs font-semibold text-slate-500">Informasi prodi, kegiatan, dan layanan mahasiswa</p>
+              <p v-if="hero.label">{{ hero.label }}</p>
+              <h2 v-if="hero.title">{{ hero.title }}</h2>
             </div>
           </div>
         </div>
@@ -45,3 +42,25 @@
     </div>
   </section>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+import { backendAssetUrl } from '../../../utils/asset'
+
+const props = defineProps({
+  hero: {
+    type: Object,
+    required: true,
+  },
+  loading: {
+    type: Boolean,
+    default: false,
+  },
+})
+
+const hero = computed(() => props.hero)
+const heroImage = computed(() => backendAssetUrl(props.hero.image_path || props.hero.image_url))
+const heroAlt = computed(() => props.hero.image_alt || 'Kegiatan Program Studi Sastra Arab')
+const hasHeroText = computed(() => props.hero.label || props.hero.title)
+const isHeroLoading = computed(() => props.loading)
+</script>

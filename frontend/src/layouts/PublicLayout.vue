@@ -1,7 +1,14 @@
 <template>
   <div class="public-root min-h-screen overflow-hidden font-display" :data-theme="resolvedTheme">
     <Preloader :show="loading" />
-    <Navbar :items="navItems" :active-section="activeSection" :theme="resolvedTheme" @toggle-theme="toggleTheme" />
+    <Navbar
+      :items="navItems"
+      :active-section="activeSection"
+      :theme="resolvedTheme"
+      :brand="navbarBrand"
+      :loading="navigationLoading"
+      @toggle-theme="toggleTheme"
+    />
 
     <router-view v-slot="{ Component, route: viewRoute }">
       <Transition name="public-page" mode="out-in">
@@ -9,7 +16,7 @@
       </Transition>
     </router-view>
 
-    <Footer :year="year" />
+    <Footer :year="year" :content="footerContent" />
   </div>
 </template>
 
@@ -20,6 +27,9 @@ import api from '../axios'
 import Footer from '../components/layouts/public/Footer.vue'
 import Navbar from '../components/layouts/public/Navbar.vue'
 import Preloader from '../components/layouts/public/Preloader.vue'
+import { applyAccentColor, applyCachedAccentColor } from '../utils/appearance'
+import { backendAssetUrl } from '../utils/asset'
+import { defaultLandingSettings, normalizeLandingSettings } from '../views/public/landing/settings'
 import { usePublicTheme } from '../views/public/usePublicTheme'
 import '../components/layouts/public/styles.css'
 
@@ -28,6 +38,15 @@ const { resolvedTheme, initTheme, toggleTheme } = usePublicTheme()
 const year = new Date().getFullYear()
 const loading = ref(true)
 const activeSection = ref('home')
+const navigationLoading = ref(true)
+const footerContent = ref(defaultLandingSettings.footer)
+const navbarBrand = ref({
+  mode: 'text',
+  icon: 'auto_stories',
+  title: 'Sastra Arab',
+  subtitle: 'Program Studi',
+  logoUrl: '',
+})
 let sectionElements = []
 let ticking = false
 
@@ -125,17 +144,64 @@ function normalizeMenuItem(item) {
 }
 
 async function loadNavigation() {
+  navigationLoading.value = true
   try {
     const { data } = await api.get('/navigation/primary')
     const items = (data || []).map(normalizeMenuItem)
     navItems.value = items.length ? items : fallbackNavItems
   } catch {
     navItems.value = fallbackNavItems
+  } finally {
+    navigationLoading.value = false
+  }
+}
+
+async function loadAppearanceSettings() {
+  try {
+    const { data } = await api.get('/settings/general')
+    if (data.accent_color) {
+      applyAccentColor(data.accent_color)
+    }
+
+    const faviconUrl = backendAssetUrl(data.favicon_path || data.favicon_url)
+    navbarBrand.value = {
+      mode: data.navbar_brand_mode || 'text',
+      icon: data.navbar_text_icon || 'auto_stories',
+      title: data.navbar_text_title || data.system_name || 'Sastra Arab',
+      subtitle: data.navbar_text_subtitle || 'Program Studi',
+      logoUrl: backendAssetUrl(data.navbar_logo_path || data.navbar_logo_url),
+    }
+
+    if (!faviconUrl) return
+
+    let favicon = document.querySelector("link[rel='icon']")
+    if (!favicon) {
+      favicon = document.createElement('link')
+      favicon.rel = 'icon'
+      document.head.appendChild(favicon)
+    }
+    favicon.href = faviconUrl
+  } catch {
+    // Keep the default favicon if public settings cannot be loaded.
+  }
+}
+
+async function loadLandingSettings() {
+  try {
+    const { data } = await api.get('/settings/landing', {
+      params: { _t: Date.now() },
+    })
+    footerContent.value = normalizeLandingSettings(data).footer
+  } catch {
+    footerContent.value = defaultLandingSettings.footer
   }
 }
 
 onMounted(() => {
+  applyCachedAccentColor()
   initTheme()
+  loadAppearanceSettings()
+  loadLandingSettings()
   loadNavigation().finally(refreshPublicNavigation)
 
   window.setTimeout(() => {

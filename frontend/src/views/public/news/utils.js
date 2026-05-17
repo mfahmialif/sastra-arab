@@ -45,6 +45,7 @@ export function normalizeNews(raw) {
 
   return {
     ...raw,
+    slug: raw?.slug || slugify(raw?.title || ''),
     category,
     categories,
     categoryName,
@@ -55,6 +56,20 @@ export function normalizeNews(raw) {
     bodyHtml: fixHtmlAssetUrls(raw?.body || ''),
     excerpt: excerpt(raw),
   }
+}
+
+export function newsDetailPath(item) {
+  const identifier = item?.slug || item?.id
+  return identifier ? `/news/${encodeURIComponent(identifier)}` : '/news'
+}
+
+export function slugify(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 export function formatDate(dateStr, options = {}) {

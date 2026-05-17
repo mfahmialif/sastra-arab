@@ -20,6 +20,12 @@ export const services = [
   { icon: 'support_agent', title: 'Layanan Prodi', body: 'Hubungi pengelola prodi untuk kebutuhan administrasi dan informasi studi.', href: '#contact' },
 ]
 
+export const missions = [
+  { icon: 'menu_book', title: 'Pendidikan Bahasa dan Sastra', body: 'Menyelenggarakan pembelajaran bahasa, sastra, dan budaya Arab yang kuat secara teori dan praktik.' },
+  { icon: 'science', title: 'Riset Keilmuan Arab', body: 'Mengembangkan penelitian bahasa, sastra, budaya, dan turats Arab yang relevan dengan kebutuhan akademik.' },
+  { icon: 'groups', title: 'Pengabdian dan Kolaborasi', body: 'Membangun jejaring akademik serta menerapkan keilmuan Sastra Arab dalam kegiatan masyarakat.' },
+]
+
 export const updates = [
   {
     day: '12',
@@ -107,10 +113,10 @@ export const testimonials = [
 ]
 
 export const supporters = [
-  { icon: 'school', name: 'UII Dalwa' },
-  { icon: 'translate', name: 'Bahasa Arab' },
-  { icon: 'diversity_3', name: 'Mahasiswa' },
-  { icon: 'science', name: 'Riset Prodi' },
-  { icon: 'history_edu', name: 'Kajian Turats' },
-  { icon: 'public', name: 'Budaya Arab' },
+  { display_type: 'icon', icon: 'school', logo_path: '', logo_url: '', name: 'UII Dalwa' },
+  { display_type: 'icon', icon: 'translate', logo_path: '', logo_url: '', name: 'Bahasa Arab' },
+  { display_type: 'icon', icon: 'diversity_3', logo_path: '', logo_url: '', name: 'Mahasiswa' },
+  { display_type: 'icon', icon: 'science', logo_path: '', logo_url: '', name: 'Riset Prodi' },
+  { display_type: 'icon', icon: 'history_edu', logo_path: '', logo_url: '', name: 'Kajian Turats' },
+  { display_type: 'icon', icon: 'public', logo_path: '', logo_url: '', name: 'Budaya Arab' },
 ]

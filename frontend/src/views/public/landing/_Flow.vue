@@ -2,8 +2,8 @@
   <section id="flow" class="bg-[#f6f8f7] py-20">
     <div class="mx-auto max-w-7xl px-5 lg:px-8">
       <div class="mx-auto max-w-3xl text-center" data-aos="fade-up">
-        <p class="section-kicker">Kegiatan Prodi</p>
-        <h2 class="section-title mt-4">Pengalaman belajar yang terarah dan aktif.</h2>
+        <p class="section-kicker">{{ content.kicker }}</p>
+        <h2 class="section-title mt-4">{{ content.title }}</h2>
       </div>
 
       <div class="mt-12 grid gap-4 md:grid-cols-5">
@@ -21,6 +21,10 @@
 defineProps({
   publishingFlow: {
     type: Array,
+    required: true,
+  },
+  content: {
+    type: Object,
     required: true,
   },
 })

@@ -10,7 +10,7 @@
       <button @click="$emit('toggle-theme')" class="theme-toggle p-2 rounded-full"><span class="material-symbols-outlined text-[22px]">{{ isDark ? 'light_mode' : 'dark_mode' }}</span></button>
       <router-link to="/kepala-penulis/profile" class="avatar-ring flex h-10 w-10 items-center justify-center rounded-full border-2 border-accent"><span class="material-symbols-outlined text-accent">person</span></router-link>
     </div>
-    <DashboardSearchOverlay :open="searchOpen" portal="kepalaPenulis" @close="searchOpen = false" />
+    <DashboardSearchOverlay :open="searchOpen" portal="kepalaPenulis" :theme="isDark ? 'dark' : 'light'" @close="searchOpen = false" />
   </header>
 </template>
 <script setup>

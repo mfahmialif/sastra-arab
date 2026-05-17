@@ -10,12 +10,12 @@
     </div>
     <div class="flex items-center gap-2 sm:gap-4">
       <!-- Search -->
-      <button class="search-trigger hidden md:grid" type="button" @click="searchOpen = true">
+      <button class="search-trigger hidden md:grid" type="button" @click="openSearch">
         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[20px]">search</span>
         <span class="search-trigger-text">Search...</span>
-        <span class="search-shortcut">⌘K</span>
+        <span class="search-shortcut">Ctrl K</span>
       </button>
-      <button class="theme-toggle relative p-2 rounded-full transition-all duration-500 cursor-pointer md:hidden" type="button" title="Search" @click="searchOpen = true">
+      <button class="theme-toggle relative p-2 rounded-full transition-all duration-500 cursor-pointer md:hidden" type="button" title="Search" @click="openSearch">
         <span class="material-symbols-outlined text-[22px]">search</span>
       </button>
 
@@ -40,10 +40,47 @@
       </button>
 
       <!-- Notifications -->
-      <button class="notif-btn relative p-2 rounded-full transition-colors cursor-pointer">
-        <span class="material-symbols-outlined">notifications</span>
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full shadow-[0_0_5px_rgba(37, 99, 235,0.8)]"></span>
-      </button>
+      <div class="relative" ref="notificationDropdownRef">
+        <button class="notif-btn relative p-2 rounded-full transition-colors cursor-pointer" type="button" @click="toggleNotifications">
+          <span class="material-symbols-outlined">notifications</span>
+          <span v-if="unreadCount > 0" class="notif-count">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+        </button>
+        <Transition name="dropdown">
+          <div v-if="notificationOpen" class="notif-dropdown absolute right-0 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] rounded-xl overflow-hidden z-50">
+            <div class="notif-head">
+              <div>
+                <p class="text-sm font-bold text-heading">Notifikasi Log</p>
+                <p class="text-xs text-muted mt-0.5">{{ unreadCount }} belum dibaca</p>
+              </div>
+              <router-link to="/administrator/logs" class="notif-detail" @click="notificationOpen = false">Detail</router-link>
+            </div>
+            <div v-if="notificationLoading" class="notif-empty">
+              <span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+              <span>Memuat log...</span>
+            </div>
+            <div v-else-if="notifications.length === 0" class="notif-empty">
+              <span class="material-symbols-outlined text-[20px]">notifications_none</span>
+              <span>Tidak ada log baru.</span>
+            </div>
+            <div v-else class="notif-list">
+              <router-link
+                v-for="item in notifications"
+                :key="item.id"
+                to="/administrator/logs"
+                class="notif-item"
+                @click="notificationOpen = false"
+              >
+                <span class="notif-icon material-symbols-outlined">{{ actionIcon(item.action) }}</span>
+                <span class="min-w-0">
+                  <span class="notif-title">{{ item.subject_title || item.description }}</span>
+                  <span class="notif-desc">{{ item.description }}</span>
+                  <span class="notif-time">{{ timeAgo(item.created_at) }}</span>
+                </span>
+              </router-link>
+            </div>
+          </div>
+        </Transition>
+      </div>
 
       <!-- ★ Avatar + Profile Dropdown ★ -->
       <div class="relative" ref="profileDropdownRef">
@@ -78,13 +115,14 @@
         </Transition>
       </div>
     </div>
-    <DashboardSearchOverlay :open="searchOpen" portal="admin" @close="searchOpen = false" />
+    <DashboardSearchOverlay :open="searchOpen" portal="admin" :theme="isDark ? 'dark' : 'light'" @close="searchOpen = false" />
   </header>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '../../../stores/auth'
+import api from '../../../axios'
 import DashboardSearchOverlay from '../shared/DashboardSearchOverlay.vue'
 
 defineProps({
@@ -97,12 +135,66 @@ defineEmits(['toggle-theme', 'toggle-sidebar', 'toggle-layout'])
 
 const searchOpen = ref(false)
 const profileOpen = ref(false)
+const notificationOpen = ref(false)
+const notificationLoading = ref(false)
+const unreadCount = ref(0)
+const notifications = ref([])
 const profileDropdownRef = ref(null)
+const notificationDropdownRef = ref(null)
 const authStore = useAuthStore()
+let notificationTimer = null
+
+function openSearch() {
+  searchOpen.value = true
+}
+
+function handleSearchShortcut(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    openSearch()
+  }
+}
 
 function handleLogout() {
   profileOpen.value = false
   authStore.logout()
+}
+
+async function fetchNotifications() {
+  notificationLoading.value = true
+  try {
+    const { data } = await api.get('/activity-logs/notifications')
+    unreadCount.value = data.unread_count || 0
+    notifications.value = data.items || []
+  } catch {
+    unreadCount.value = 0
+    notifications.value = []
+  } finally {
+    notificationLoading.value = false
+  }
+}
+
+function toggleNotifications() {
+  notificationOpen.value = !notificationOpen.value
+  if (notificationOpen.value) {
+    fetchNotifications()
+  }
+}
+
+function actionIcon(action) {
+  if (action === 'created') return 'add_circle'
+  if (action === 'updated') return 'edit'
+  if (action === 'deleted') return 'delete'
+  return 'history'
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return ''
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+  if (diff < 60) return 'Baru saja'
+  if (diff < 3600) return `${Math.floor(diff / 60)} menit lalu`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`
+  return `${Math.floor(diff / 86400)} hari lalu`
 }
 
 // Close dropdown on click outside
@@ -110,10 +202,24 @@ function handleClickOutside(e) {
   if (profileDropdownRef.value && !profileDropdownRef.value.contains(e.target)) {
     profileOpen.value = false
   }
+  if (notificationDropdownRef.value && !notificationDropdownRef.value.contains(e.target)) {
+    notificationOpen.value = false
+  }
 }
 
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('keydown', handleSearchShortcut)
+  window.addEventListener('activity-logs:refresh', fetchNotifications)
+  fetchNotifications()
+  notificationTimer = window.setInterval(fetchNotifications, 60000)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('keydown', handleSearchShortcut)
+  window.removeEventListener('activity-logs:refresh', fetchNotifications)
+  if (notificationTimer) window.clearInterval(notificationTimer)
+})
 </script>
 
 <style scoped>
@@ -145,9 +251,6 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
   font-weight: 750;
 }
 .search-shortcut {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.1rem 0.45rem;
   color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 900;
@@ -189,6 +292,115 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 .notif-btn:hover {
   background: var(--bg-input);
   color: var(--color-accent);
+}
+.notif-count {
+  position: absolute;
+  right: -0.25rem;
+  top: -0.25rem;
+  display: inline-flex;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ef4444;
+  color: white;
+  padding: 0 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 950;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--bg-header);
+}
+.notif-dropdown {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+.notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1rem;
+}
+.notif-detail {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--color-accent);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+.notif-detail:hover {
+  background: var(--hover-nav-bg);
+}
+.notif-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.notif-list {
+  display: grid;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+.notif-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.8rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0.85rem 1rem;
+  color: var(--text-body);
+}
+.notif-item:hover {
+  background: var(--hover-nav-bg);
+}
+.notif-item:last-child {
+  border-bottom: 0;
+}
+.notif-icon {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+  font-size: 1.15rem;
+}
+.notif-title,
+.notif-desc,
+.notif-time {
+  display: block;
+}
+.notif-title {
+  overflow: hidden;
+  color: var(--text-heading);
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notif-desc {
+  margin-top: 0.15rem;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notif-time {
+  margin-top: 0.3rem;
+  color: var(--color-accent);
+  font-size: 0.7rem;
+  font-weight: 900;
 }
 
 /* ═══ Profile Dropdown ═══ */

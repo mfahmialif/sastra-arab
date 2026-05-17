@@ -26,7 +26,32 @@
         <input v-model="form.title" class="filter-input rounded-xl py-2.5 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Judul news" />
       </div>
 
-      <!-- ── Row 2: Kategori + Status + Penulis ── -->
+      <!-- ── Row 2: Slug ── -->
+      <div class="flex flex-col gap-1.5">
+        <label class="text-sm font-medium" style="color: var(--text-body)">Slug</label>
+        <div class="slug-input-wrap rounded-xl">
+          <span class="slug-prefix">/news/</span>
+          <input
+            v-model="form.slug"
+            :readonly="!slugEditable"
+            class="slug-input py-2.5 pr-4 text-sm focus:outline-none"
+            :class="{ 'slug-input-readonly': !slugEditable }"
+            placeholder="judul-news"
+            @input="form.slug = slugify(form.slug)"
+          />
+          <button
+            type="button"
+            class="slug-toggle"
+            :class="{ 'slug-toggle-active': slugEditable }"
+            :title="slugEditable ? 'Slug bisa diedit' : 'Aktifkan edit slug'"
+            @click="toggleSlugEditable"
+          >
+            <span class="material-symbols-outlined text-[20px]">check_circle</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Row 3: Kategori + Status + Penulis ── -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium" style="color: var(--text-body)">Kategori *</label>
@@ -106,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import VueMultiselect from 'vue-multiselect'
 import 'vue-multiselect/dist/vue-multiselect.css'
@@ -123,9 +148,11 @@ const formLoading = ref(false)
 const formError = ref('')
 
 const form = ref({
-  title: '', news_category_ids: [], body: '',
+  title: '', slug: '', news_category_ids: [], body: '',
   author_id: null, speaker: '', duration: '', status: 'Published',
 })
+const slugEditable = ref(false)
+const syncingForm = ref(false)
 
 const imageFile = ref(null); const imagePreview = ref(null); const imageDragOver = ref(false); const removeImageFlag = ref(false)
 const videoFile = ref(null); const videoPreview = ref(null); const videoDragOver = ref(false); const removeVideoFlag = ref(false)
@@ -153,6 +180,27 @@ const formAuthorOption = computed({
   get: () => authorOptions.value.find(o => o.id === form.value.author_id) || null,
   set: (val) => { form.value.author_id = val?.id || null }
 })
+
+watch(() => form.value.title, (title) => {
+  if (syncingForm.value) return
+  if (!slugEditable.value) {
+    form.value.slug = slugify(title)
+  }
+}, { flush: 'sync' })
+
+function toggleSlugEditable() {
+  slugEditable.value = !slugEditable.value
+  form.value.slug = slugify(form.value.slug || form.value.title)
+}
+
+function slugify(value = '') {
+  return String(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 
 // ── Quill Editor ──
 const quillRef = ref(null)
@@ -220,12 +268,14 @@ onMounted(async () => {
     try {
       const { data } = await api.get(`/news/${route.params.id}`)
       const ids = (data.categories?.length ? data.categories : [data.category].filter(Boolean)).map(item => item.id)
+      syncingForm.value = true
       form.value = {
-        title: data.title || '', news_category_ids: ids.length ? ids : categoryOptions.value.slice(0, 1).map(item => item.value),
+        title: data.title || '', slug: data.slug || '', news_category_ids: ids.length ? ids : categoryOptions.value.slice(0, 1).map(item => item.value),
         author_id: data.author_id || data.author?.id || null,
         body: data.body || '', speaker: data.speaker || '',
         duration: data.duration || '', status: data.status || 'Published',
       }
+      syncingForm.value = false
       if (data.image_path) imagePreview.value = storageUrl(data.image_path)
       if (data.video_path) videoPreview.value = storageUrl(data.video_path)
     } catch { formError.value = 'Gagal memuat data.' }
@@ -257,6 +307,7 @@ async function handleSubmit() {
     if (selectedCategoryType.value !== 'Gambar') await uploadPendingEditorMedia()
     const fd = new FormData()
     fd.append('title', form.value.title)
+    if (form.value.slug) fd.append('slug', form.value.slug)
     if (!form.value.news_category_ids.length) {
       throw new Error('Pilih minimal satu kategori.')
     }
@@ -291,6 +342,15 @@ async function handleSubmit() {
 .filter-input::placeholder { color: var(--text-muted); }
 .filter-input:hover { box-shadow: 0 0 15px rgba(37, 99, 235, 0.15); }
 .filter-input:focus { border-color: var(--color-accent); box-shadow: 0 0 12px rgba(37, 99, 235, 0.3); }
+.slug-input-wrap { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; min-height: 2.75rem; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-heading); transition: box-shadow 0.3s ease, border-color 0.3s ease; overflow: hidden; }
+.slug-input-wrap:hover { box-shadow: 0 0 15px rgba(37, 99, 235, 0.15); }
+.slug-input-wrap:focus-within { border-color: var(--color-accent); box-shadow: 0 0 12px rgba(37, 99, 235, 0.3); }
+.slug-prefix { padding-left: 1rem; color: var(--text-muted); font-size: 0.875rem; font-weight: 700; }
+.slug-input { min-width: 0; width: 100%; background: transparent; color: var(--text-heading); }
+.slug-input::placeholder { color: var(--text-muted); }
+.slug-input-readonly { color: var(--text-muted); cursor: default; }
+.slug-toggle { display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; color: var(--text-muted); border-left: 1px solid var(--border); cursor: pointer; transition: color 0.2s ease, background 0.2s ease; }
+.slug-toggle:hover, .slug-toggle-active { color: var(--color-accent); background: rgba(37, 99, 235, 0.1); }
 .upload-zone { background: var(--bg-input); border: 2px dashed var(--border); transition: all 0.3s ease; }
 .upload-zone:hover, .upload-zone.drag-over { border-color: var(--color-accent); background: rgba(37, 99, 235, 0.05); box-shadow: 0 0 20px rgba(37, 99, 235, 0.1); }
 .quill-dark :deep(.ql-toolbar) { background: var(--bg-input); border-color: var(--border) !important; border-radius: 12px 12px 0 0; }

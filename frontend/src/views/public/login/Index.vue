@@ -11,7 +11,7 @@
 
     <div class="grid min-h-screen lg:grid-cols-[1.08fr_0.92fr]">
       <section class="login-visual-panel relative hidden overflow-hidden lg:block">
-        <img src="/img/hero-bg.jpg" alt="Sastra Arab" class="absolute inset-0 h-full w-full object-cover" />
+        <img :src="loginImageUrl" alt="Sastra Arab" class="absolute inset-0 h-full w-full object-cover" />
         <div class="login-visual-overlay absolute inset-0"></div>
         <div class="login-visual-gradient absolute inset-x-0 bottom-0 h-1/2"></div>
 
@@ -45,7 +45,7 @@
         </div>
       </section>
 
-      <section class="flex min-h-screen items-center justify-center px-5 py-8 sm:px-8">
+      <section class="login-form-panel flex min-h-screen items-center justify-center px-5 py-8 sm:px-8">
         <div class="w-full max-w-[460px]">
           <div class="mb-8 flex items-center justify-between gap-4 lg:hidden">
             <router-link to="/" class="flex items-center gap-3">
@@ -166,10 +166,11 @@
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../../../axios'
 import { useAuthStore } from '../../../stores/auth'
+import { backendAssetUrl } from '../../../utils/asset'
 import { usePublicTheme } from '../usePublicTheme'
 import '../../../components/layouts/public/styles.css'
 
@@ -190,6 +191,7 @@ const googleConfig = ref({
 })
 const googleButtonRef = ref(null)
 const currentYear = new Date().getFullYear()
+const loginImageUrl = ref('/img/hero-bg.jpg')
 let googlePromptInitialized = false
 
 const highlights = [
@@ -243,6 +245,15 @@ async function loadGoogleConfig() {
     }
   } catch {
     googleConfig.value = { enabled: false, client_id: null }
+  }
+}
+
+async function loadLoginSettings() {
+  try {
+    const { data } = await api.get('/settings/login', { skipAuthRedirect: true })
+    loginImageUrl.value = backendAssetUrl(data.image_path || data.image_url) || '/img/hero-bg.jpg'
+  } catch {
+    loginImageUrl.value = '/img/hero-bg.jpg'
   }
 }
 
@@ -312,51 +323,65 @@ async function handleGoogleCredential(response) {
 
 onMounted(async () => {
   initTheme()
+  loadLoginSettings()
   await loadGoogleConfig()
+})
+
+watch(resolvedTheme, async () => {
+  if (!googleConfig.value.enabled || !googleButtonRef.value) return
+
+  googleButtonRef.value.innerHTML = ''
+  googlePromptInitialized = false
+  await nextTick()
+  initGoogleLogin()
 })
 </script>
 
 <style scoped>
 .login-page {
-  --login-bg: #f6f8fb;
-  --login-panel-bg: #ffffff;
-  --login-panel-border: #e2e8f0;
-  --login-panel-shadow: 0 24px 70px rgba(15, 23, 42, 0.1);
+  --login-bg: #eef4fb;
+  --login-panel-bg: rgba(255, 255, 255, 0.88);
+  --login-panel-border: rgba(148, 163, 184, 0.28);
+  --login-panel-shadow: 0 28px 80px rgba(15, 23, 42, 0.14), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
   --login-heading: #0f172a;
   --login-body: #334155;
   --login-muted: #64748b;
-  --login-accent: #0284c7;
-  --login-accent-strong: #0369a1;
-  --login-accent-soft: #e0f2fe;
-  --login-input-bg: #ffffff;
-  --login-input-border: #cbd5e1;
+  --login-accent: var(--app-accent, #0284c7);
+  --login-accent-strong: var(--app-accent-strong, #0369a1);
+  --login-accent-soft: var(--app-accent-soft, #e0f2fe);
+  --login-input-bg: rgba(255, 255, 255, 0.94);
+  --login-input-border: #d5dee9;
   --login-input-text: #0f172a;
   --login-input-focus-bg: #ffffff;
   --login-visual-heading: #f8fafc;
   --login-visual-body: rgba(226, 232, 240, 0.9);
   background:
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26rem),
-    linear-gradient(180deg, #ffffff 0%, var(--login-bg) 100%);
+    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--login-accent) 16%, transparent), transparent 23rem),
+    radial-gradient(circle at 96% 88%, rgba(15, 23, 42, 0.09), transparent 20rem),
+    linear-gradient(135deg, #ffffff 0%, #f7fbff 42%, var(--login-bg) 100%);
   color: var(--login-heading);
 }
 .login-page[data-theme='dark'] {
-  --login-bg: #0b1020;
-  --login-panel-bg: rgba(255, 255, 255, 0.06);
-  --login-panel-border: rgba(255, 255, 255, 0.1);
-  --login-panel-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+  --login-bg: #070b16;
+  --login-panel-bg: rgba(9, 14, 27, 0.78);
+  --login-panel-border: rgba(255, 255, 255, 0.12);
+  --login-panel-shadow: 0 30px 90px rgba(0, 0, 0, 0.48), 0 1px 0 rgba(255, 255, 255, 0.08) inset;
   --login-heading: #ffffff;
   --login-body: #cbd5e1;
   --login-muted: #94a3b8;
-  --login-accent: #38bdf8;
-  --login-accent-strong: #7dd3fc;
-  --login-accent-soft: rgba(56, 189, 248, 0.12);
-  --login-input-bg: rgba(255, 255, 255, 0.06);
+  --login-accent: var(--app-accent, #38bdf8);
+  --login-accent-strong: var(--app-accent-strong, #7dd3fc);
+  --login-accent-soft: var(--app-accent-soft, rgba(56, 189, 248, 0.12));
+  --login-input-bg: rgba(255, 255, 255, 0.07);
   --login-input-border: rgba(255, 255, 255, 0.12);
   --login-input-text: #ffffff;
-  --login-input-focus-bg: rgba(255, 255, 255, 0.08);
+  --login-input-focus-bg: rgba(255, 255, 255, 0.1);
   --login-visual-heading: #ffffff;
   --login-visual-body: rgba(226, 232, 240, 0.85);
-  background: #0b1020;
+  background:
+    radial-gradient(circle at 84% 10%, color-mix(in srgb, var(--login-accent) 22%, transparent), transparent 24rem),
+    radial-gradient(circle at 18% 86%, rgba(255, 255, 255, 0.08), transparent 22rem),
+    linear-gradient(135deg, #050816 0%, #0b1020 48%, #111827 100%);
   color: var(--login-heading);
 }
 .login-page[data-theme='light'] {
@@ -377,9 +402,10 @@ onMounted(async () => {
   justify-content: center;
   border-radius: 999px;
   border: 1px solid var(--login-panel-border);
-  background: var(--login-panel-bg);
+  background: color-mix(in srgb, var(--login-panel-bg) 86%, transparent);
   color: var(--login-heading);
   box-shadow: var(--login-panel-shadow);
+  backdrop-filter: blur(18px);
   transition: transform 0.2s ease, background 0.2s ease;
 }
 .login-theme-toggle:hover {
@@ -390,21 +416,52 @@ onMounted(async () => {
   background: #0f172a;
 }
 .login-visual-overlay {
-  background: rgba(7, 17, 31, 0.72);
+  background:
+    linear-gradient(135deg, rgba(7, 17, 31, 0.84), rgba(7, 17, 31, 0.48)),
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--login-accent) 28%, transparent), transparent 24rem);
 }
 .login-visual-gradient {
   background: linear-gradient(to top, #0b1020, transparent);
 }
 .login-page[data-theme='light'] .login-visual-overlay {
-  background: linear-gradient(120deg, rgba(15, 23, 42, 0.76), rgba(3, 105, 161, 0.38));
+  background:
+    linear-gradient(115deg, rgba(15, 23, 42, 0.68), rgba(15, 23, 42, 0.22)),
+    radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--login-accent) 34%, transparent), transparent 24rem);
 }
 .login-page[data-theme='light'] .login-visual-gradient {
-  background: linear-gradient(to top, rgba(15, 23, 42, 0.7), transparent);
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.62), transparent);
+}
+.login-page[data-theme='dark'] .login-visual-panel img {
+  filter: saturate(0.9) contrast(1.05) brightness(0.72);
+}
+.login-page[data-theme='light'] .login-visual-panel img {
+  filter: saturate(1.05) contrast(1.02) brightness(1);
+}
+.login-form-panel {
+  position: relative;
+  isolation: isolate;
+}
+.login-form-panel::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: '';
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(circle at center, black, transparent 72%);
+}
+.login-page[data-theme='dark'] .login-form-panel::before {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
 }
 .login-visual-logo-icon,
 .login-mobile-logo-icon {
-  background: #ffffff;
-  color: #0b1020;
+  background: color-mix(in srgb, var(--login-panel-bg) 84%, white);
+  color: var(--login-accent);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
 }
 .login-mobile-logo-icon {
   border: 1px solid var(--login-panel-border);
@@ -418,25 +475,37 @@ onMounted(async () => {
   color: var(--login-heading);
 }
 .login-kicker {
-  border: 1px solid rgba(125, 211, 252, 0.32);
-  background: rgba(14, 165, 233, 0.14);
-  color: #e0f2fe;
+  border: 1px solid var(--login-accent-soft);
+  background: var(--login-accent-soft);
+  color: var(--login-accent-strong);
 }
 .login-visual-copy {
   color: var(--login-visual-body);
 }
 .login-highlight {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
+.login-page[data-theme='light'] .login-highlight {
+  background: rgba(255, 255, 255, 0.18);
+}
+.login-page[data-theme='dark'] .login-highlight {
+  background: rgba(15, 23, 42, 0.34);
+}
 .login-highlight .material-symbols-outlined {
-  color: #bae6fd;
+  color: color-mix(in srgb, var(--login-accent-strong) 72%, white);
 }
 .login-card {
   border: 1px solid var(--login-panel-border);
   background: var(--login-panel-bg);
   box-shadow: var(--login-panel-shadow);
+}
+.login-page[data-theme='dark'] .login-card {
+  backdrop-filter: blur(24px) saturate(1.12);
+}
+.login-page[data-theme='light'] .login-card {
+  backdrop-filter: blur(18px) saturate(1.04);
 }
 .login-eyebrow,
 .login-back-link {
@@ -481,9 +550,15 @@ onMounted(async () => {
   color: var(--login-muted);
 }
 .field-input:focus {
-  border-color: rgb(125 211 252);
+  border-color: var(--public-accent-strong);
   background: var(--login-input-focus-bg);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
+  box-shadow: 0 0 0 3px var(--public-accent-soft);
+}
+.login-page[data-theme='dark'] .field-input {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+.login-page[data-theme='light'] .field-input {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 .password-toggle {
   color: var(--login-muted);
@@ -497,12 +572,25 @@ onMounted(async () => {
   background: var(--login-input-bg);
 }
 .login-submit {
-  background: #38bdf8;
-  color: #07111f;
-  box-shadow: 0 18px 36px rgba(2, 132, 199, 0.22);
+  background: var(--login-accent);
+  color: #ffffff;
+  box-shadow: 0 18px 36px var(--app-accent-soft, rgba(2, 132, 199, 0.22));
+}
+.login-page[data-theme='light'] .login-submit {
+  background: linear-gradient(135deg, var(--login-accent), var(--login-accent-strong));
+}
+.login-page[data-theme='dark'] .login-submit {
+  background: linear-gradient(135deg, var(--login-accent-strong), var(--login-accent));
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--login-accent) 30%, transparent);
 }
 .login-submit:hover {
-  background: #7dd3fc;
+  background: var(--login-accent-strong);
+}
+.login-page :is(.text-sky-700, .text-sky-600, .text-sky-500, .text-sky-400, .text-sky-300, .text-cyan-700, .text-cyan-600, .text-cyan-500, .text-blue-700, .text-blue-600, .text-blue-500) {
+  color: var(--login-accent-strong) !important;
+}
+.login-page :is(.bg-sky-700, .bg-sky-600, .bg-sky-500, .bg-sky-400, .bg-cyan-700, .bg-cyan-600, .bg-cyan-500, .bg-blue-700, .bg-blue-600, .bg-blue-500) {
+  background-color: var(--login-accent) !important;
 }
 .login-divider {
   display: grid;
@@ -527,11 +615,14 @@ onMounted(async () => {
   gap: 0.45rem;
   border: 1px solid var(--login-panel-border);
   border-radius: 0.9rem;
-  background: var(--login-input-bg);
+  background: color-mix(in srgb, var(--login-input-bg) 88%, transparent);
   padding: 0.8rem 1rem;
   color: var(--login-muted);
   font-size: 0.9rem;
   font-weight: 750;
+}
+.login-page[data-theme='light'] .register-callout {
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
 }
 .register-callout a,
 .register-callout span {

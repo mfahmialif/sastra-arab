@@ -31,6 +31,29 @@ export function storageUrl(path) {
 }
 
 /**
+ * Build an asset URL from a backend response that may contain either a storage
+ * path (settings/file.jpg), a /storage URL, or an absolute backend URL.
+ */
+export function backendAssetUrl(value) {
+  if (!value) return ''
+
+  if (!value.startsWith('http')) {
+    return value.startsWith('/storage/') ? assetUrl(value) : storageUrl(value)
+  }
+
+  try {
+    const url = new URL(value)
+    if (url.pathname.startsWith('/storage/')) {
+      return assetUrl(url.pathname)
+    }
+  } catch {
+    return value
+  }
+
+  return value
+}
+
+/**
  * Fix asset URLs inside HTML content (from Quill rich-text editor).
  * Replaces relative /storage/ paths with full backend URLs.
  * @param {string} html — raw HTML string

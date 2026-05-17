@@ -1,11 +1,23 @@
 <template>
   <aside :class="['sidebar flex h-screen flex-col p-4 shrink-0 transition-all duration-300', collapsed ? 'sidebar-collapsed' : '']">
     <div class="flex items-center px-3 pb-4 shrink-0" :class="collapsed ? 'justify-center' : 'justify-between'">
-      <div class="overflow-hidden transition-all duration-300" :style="collapsed ? 'width: 0; opacity: 0' : 'width: auto; opacity: 1'">
+      <router-link
+        to="/"
+        class="brand-link overflow-hidden transition-all duration-300"
+        :style="collapsed ? 'width: 0; opacity: 0' : 'width: auto; opacity: 1'"
+        title="Buka landing page"
+      >
         <h1 class="text-heading text-lg font-bold leading-normal whitespace-nowrap">Sastra Arab</h1>
         <p class="text-muted text-sm font-medium leading-normal whitespace-nowrap">Admin CMS</p>
-      </div>
-      <span v-if="collapsed" class="material-symbols-outlined text-accent text-[28px]">school</span>
+      </router-link>
+      <router-link
+        v-if="collapsed"
+        to="/"
+        class="brand-icon-link"
+        title="Buka landing page"
+      >
+        <span class="material-symbols-outlined text-accent text-[28px]">school</span>
+      </router-link>
       <button @click="$emit('close-sidebar')" class="close-btn p-1.5 rounded-lg transition-colors cursor-pointer lg:hidden">
         <span class="material-symbols-outlined text-[22px]">close</span>
       </button>
@@ -48,7 +60,7 @@
 </template>
 
 <script setup>
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import simplebar from 'simplebar-vue'
 import 'simplebar-vue/dist/simplebar.min.css'
 import { useAuthStore } from '../../../stores/auth'
@@ -56,7 +68,6 @@ import { useAuthStore } from '../../../stores/auth'
 defineProps({ collapsed: { type: Boolean, default: false } })
 defineEmits(['close-sidebar', 'toggle-collapse'])
 
-const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
@@ -77,16 +88,17 @@ const navSections = [
   {
     label: 'Manajemen',
     items: [
-      { icon: 'group', label: 'Manajemen User', route: '/administrator/manajemen-user' },
-      { icon: 'admin_panel_settings', label: 'Manajemen Role', route: '/administrator/manajemen-role' },
+      { icon: 'group', label: 'User', route: '/administrator/manajemen-user' },
+      { icon: 'admin_panel_settings', label: 'Role', route: '/administrator/manajemen-role' },
     ],
   },
   {
     label: 'Website',
     items: [
       { icon: 'web', label: 'Pages', route: '/administrator/pages' },
-      { icon: 'menu', label: 'Manajemen Menu', route: '/administrator/menus' },
+      { icon: 'menu', label: 'Menu', route: '/administrator/menus' },
       { icon: 'person', label: 'Profile', route: '/administrator/profile' },
+      { icon: 'history', label: 'Log', route: '/administrator/logs' },
       { icon: 'settings', label: 'Pengaturan', route: '/administrator/pengaturan' },
     ],
   },
@@ -98,6 +110,7 @@ function isActiveRoute(itemRoute) {
     || (itemRoute === '/administrator/news-categories' && route.path.startsWith('/administrator/news-categories'))
     || (itemRoute === '/administrator/pages' && route.path.startsWith('/administrator/pages'))
     || (itemRoute === '/administrator/menus' && route.path.startsWith('/administrator/menus'))
+    || (itemRoute === '/administrator/logs' && route.path.startsWith('/administrator/logs'))
 }
 
 function handleLogout() {
@@ -124,6 +137,21 @@ function handleLogout() {
 .text-body { color: var(--text-body); }
 .text-muted { color: var(--text-muted); }
 .text-btn-text { color: var(--text-btn); }
+.brand-link {
+  display: block;
+  text-decoration: none;
+}
+.brand-link:hover .text-heading,
+.brand-icon-link:hover {
+  color: var(--color-accent);
+}
+.brand-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  text-decoration: none;
+}
 
 .nav-item {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

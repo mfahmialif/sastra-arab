@@ -28,6 +28,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '../../../axios'
 import { fixHtmlAssetUrls } from '../../../utils/asset'
+import { applySeo, makeExcerpt } from '../../../utils/seo'
 import '../news/styles.css'
 
 const route = useRoute()
@@ -42,13 +43,24 @@ async function loadPage() {
   try {
     const { data } = await api.get(`/public/pages/${route.params.slug}`)
     page.value = data
-    document.title = `${data.title} - Sastra Arab`
+    applySeo({
+      title: `${data.title} - Sastra Arab`,
+      description: makeExcerpt(data.body || data.title),
+      image: firstImageFromHtml(data.body),
+      type: 'article',
+      url: window.location.href,
+    })
   } catch (err) {
     page.value = null
     error.value = err.response?.status === 404 ? 'Halaman tidak ditemukan atau belum dipublikasikan.' : 'Terjadi kesalahan saat memuat halaman.'
   } finally {
     loading.value = false
   }
+}
+
+function firstImageFromHtml(html = '') {
+  const match = String(html).match(/<img[^>]+src=["']([^"']+)["']/i)
+  return match?.[1] || '/img/news/news1.jpg'
 }
 
 onMounted(loadPage)

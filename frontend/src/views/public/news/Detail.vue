@@ -169,7 +169,8 @@ import 'aos/dist/aos.css'
 import './styles.css'
 import api from '../../../axios'
 import Comments from './_Comments.vue'
-import { categoryClass, formatDate, formatRelative, normalizeNews } from './utils'
+import { categoryClass, formatDate, formatRelative, newsDetailPath, normalizeNews } from './utils'
+import { applySeo, makeExcerpt } from '../../../utils/seo'
 
 const route = useRoute()
 const router = useRouter()
@@ -195,6 +196,13 @@ async function loadDetail() {
   try {
     const { data } = await api.get(`/news/${route.params.id}`)
     newsItem.value = normalizeNews(data.data || data)
+    applySeo({
+      title: `${newsItem.value.title} - Sastra Arab`,
+      description: makeExcerpt(newsItem.value.bodyHtml || newsItem.value.excerpt || newsItem.value.title),
+      image: newsItem.value.image,
+      type: 'article',
+      url: window.location.href,
+    })
     await loadRelated()
   } catch (err) {
     console.error(err)
@@ -239,7 +247,7 @@ async function copyLink() {
 }
 
 function openDetail(item) {
-  router.push({ name: 'DetailNews', params: { id: item.slug || item.id } })
+  router.push(newsDetailPath(item))
 }
 
 function categoryList(item) {

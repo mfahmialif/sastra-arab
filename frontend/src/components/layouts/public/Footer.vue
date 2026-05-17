@@ -10,60 +10,72 @@
               <span class="material-symbols-outlined text-[26px]">auto_stories</span>
             </span>
             <span>
-              <span class="block text-xl font-black text-white">Sastra Arab</span>
-              <span class="block text-xs font-black uppercase tracking-[0.2em] text-sky-300">Program Studi</span>
+              <span class="block text-xl font-black text-white">{{ footer.brand_title }}</span>
+              <span class="block text-xs font-black uppercase tracking-[0.2em] text-sky-300">{{ footer.brand_subtitle }}</span>
             </span>
           </router-link>
           <p class="mt-6 max-w-xl text-base leading-8 text-slate-300">
-            Website Program Studi Sastra Arab untuk informasi akademik, berita, kegiatan, dan layanan komunikasi prodi.
+            {{ footer.description }}
           </p>
           <div class="mt-7 flex flex-wrap gap-3">
-            <router-link to="/news" class="footer-cta">
-              Lihat News
+            <component :is="linkComponent(footer.primary_href)" v-bind="linkAttrs(footer.primary_href)" class="footer-cta">
+              {{ footer.primary_label }}
               <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </router-link>
-            <router-link to="/contact" class="footer-ghost">
-              Kontak Prodi
-            </router-link>
+            </component>
+            <component :is="linkComponent(footer.secondary_href)" v-bind="linkAttrs(footer.secondary_href)" class="footer-ghost">
+              {{ footer.secondary_label }}
+            </component>
           </div>
         </div>
 
         <div class="footer-column">
-          <p class="footer-heading">Navigasi</p>
-          <router-link v-for="item in navigation" :key="item.to" :to="item.to" class="footer-link">
+          <p class="footer-heading">{{ footer.navigation_title }}</p>
+          <component
+            :is="linkComponent(item.href)"
+            v-for="item in footer.navigation"
+            :key="`${item.label}-${item.href}`"
+            v-bind="linkAttrs(item.href)"
+            class="footer-link"
+          >
             {{ item.label }}
-          </router-link>
+          </component>
         </div>
 
         <div class="footer-column">
-          <p class="footer-heading">Layanan</p>
-          <a v-for="item in services" :key="item.href" :href="item.href" class="footer-link">
+          <p class="footer-heading">{{ footer.services_title }}</p>
+          <component
+            :is="linkComponent(item.href)"
+            v-for="item in footer.services"
+            :key="`${item.label}-${item.href}`"
+            v-bind="linkAttrs(item.href)"
+            class="footer-link"
+          >
             {{ item.label }}
-          </a>
+          </component>
         </div>
 
         <div class="footer-contact">
-          <p class="footer-heading">Kontak</p>
-          <a href="mailto:sastraarab@uiidalwa.ac.id" class="footer-contact-row">
+          <p class="footer-heading">{{ footer.contact_title }}</p>
+          <a :href="`mailto:${footer.email}`" class="footer-contact-row">
             <span class="material-symbols-outlined">mail</span>
-            sastraarab@uiidalwa.ac.id
+            {{ footer.email }}
           </a>
-          <a href="https://wa.me/6281200000000" target="_blank" rel="noopener" class="footer-contact-row">
+          <a :href="whatsappHref" target="_blank" rel="noopener" class="footer-contact-row">
             <span class="material-symbols-outlined">chat</span>
-            +62 812 0000 0000
+            {{ footer.phone }}
           </a>
-          <a href="https://maps.app.goo.gl/pNNU4dnCtuu7y4Qk6" target="_blank" rel="noopener" class="footer-contact-row">
+          <a :href="footer.maps_href" target="_blank" rel="noopener" class="footer-contact-row">
             <span class="material-symbols-outlined">location_on</span>
-            Pasuruan, Jawa Timur
+            {{ footer.address }}
           </a>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <p>© {{ year }} Sastra Arab. All rights reserved.</p>
+        <p>© {{ year }} {{ footer.copyright }}</p>
         <div class="flex flex-wrap items-center gap-4">
-          <router-link to="/login" class="footer-bottom-link">Admin Login</router-link>
-          <a href="https://maps.app.goo.gl/pNNU4dnCtuu7y4Qk6" target="_blank" rel="noopener" class="footer-bottom-link">Maps</a>
+          <component :is="linkComponent(footer.admin_href)" v-bind="linkAttrs(footer.admin_href)" class="footer-bottom-link">{{ footer.admin_label }}</component>
+          <a :href="footer.maps_href" target="_blank" rel="noopener" class="footer-bottom-link">{{ footer.maps_label }}</a>
         </div>
       </div>
     </div>
@@ -71,25 +83,46 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+import { defaultLandingSettings } from '../../../views/public/landing/settings'
+
+const props = defineProps({
   year: {
     type: Number,
     required: true,
   },
+  content: {
+    type: Object,
+    default: () => defaultLandingSettings.footer,
+  },
 })
 
-const navigation = [
-  { label: 'Home', to: '/' },
-  { label: 'Profil', to: '/#about' },
-  { label: 'Akademik', to: '/#services' },
-  { label: 'News', to: '/news' },
-  { label: 'Contact', to: '/contact' },
-]
+const footer = computed(() => ({
+  ...defaultLandingSettings.footer,
+  ...(props.content || {}),
+  navigation: Array.isArray(props.content?.navigation) ? props.content.navigation : defaultLandingSettings.footer.navigation,
+  services: Array.isArray(props.content?.services) ? props.content.services : defaultLandingSettings.footer.services,
+}))
 
-const services = [
-  { label: 'Informasi Akademik', href: '/#services' },
-  { label: 'Kegiatan Mahasiswa', href: '/#flow' },
-  { label: 'Berita Prodi', href: '/news' },
-  { label: 'Kontak Prodi', href: '/contact' },
-]
+const whatsappHref = computed(() => {
+  const value = footer.value.whatsapp || footer.value.phone || ''
+  const number = value.replace(/\D/g, '')
+  return number ? `https://wa.me/${number}` : '#'
+})
+
+function isExternal(href = '') {
+  return /^https?:\/\//.test(href) || href.startsWith('mailto:') || href.startsWith('tel:')
+}
+
+function linkComponent(href = '') {
+  return isExternal(href) ? 'a' : 'router-link'
+}
+
+function linkAttrs(href = '') {
+  if (isExternal(href)) {
+    return { href, target: '_blank', rel: 'noopener' }
+  }
+
+  return { to: href || '/' }
+}
 </script>

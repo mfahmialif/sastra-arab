@@ -82,6 +82,8 @@ import AdminHorizontalNav from '../components/layouts/admin/AdminHorizontalNav.v
 import AdminFooter from '../components/layouts/admin/AdminFooter.vue'
 import api from '../axios'
 import { readThemePreference, resolveThemePreference, writeThemePreference } from '../composables/useThemePreference'
+import { backendAssetUrl } from '../utils/asset'
+import { applyAccentColor, applyCachedAccentColor } from '../utils/appearance'
 
 const route = useRoute()
 const pageTitle = computed(() => route.meta.pageTitle || 'Dashboard')
@@ -92,6 +94,7 @@ const sidebarCollapsed = ref(false)
 const layoutMode = ref('vertical')
 
 onMounted(() => {
+  applyCachedAccentColor()
   const savedCollapsed = localStorage.getItem('admin-sidebar-collapsed')
   if (savedCollapsed) sidebarCollapsed.value = savedCollapsed === 'true'
   const savedLayout = localStorage.getItem('admin-layout-mode')
@@ -137,17 +140,18 @@ async function loadAppearanceSettings() {
   try {
     const { data } = await api.get('/settings/general')
     if (data.accent_color) {
-      document.querySelector('.admin-root')?.style.setProperty('--color-accent', data.accent_color)
+      applyAccentColor(data.accent_color)
     }
 
-    if (data.favicon_url) {
+    const faviconUrl = backendAssetUrl(data.favicon_path || data.favicon_url)
+    if (faviconUrl) {
       let favicon = document.querySelector("link[rel='icon']")
       if (!favicon) {
         favicon = document.createElement('link')
         favicon.rel = 'icon'
         document.head.appendChild(favicon)
       }
-      favicon.href = data.favicon_url
+      favicon.href = faviconUrl
     }
   } catch {
     // Appearance settings are optional; keep the default admin theme if unavailable.

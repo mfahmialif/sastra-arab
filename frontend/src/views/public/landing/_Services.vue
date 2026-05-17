@@ -1,7 +1,7 @@
 <template>
   <section id="services" class="bg-[#f6f8f7] py-20">
     <div class="mx-auto max-w-7xl px-5 lg:px-8">
-      <SectionHeader kicker="Akademik" title="Informasi dan layanan Program Studi Sastra Arab." />
+      <SectionHeader :kicker="content.kicker" :title="content.title" />
 
       <div class="mt-10 grid gap-4 md:grid-cols-4">
         <a v-for="(service, index) in services" :key="service.title" :href="service.href" class="service-tile" data-aos="zoom-in-up" :data-aos-delay="index * 90">
@@ -22,6 +22,10 @@ import SectionHeader from './_SectionHeader.vue'
 defineProps({
   services: {
     type: Array,
+    required: true,
+  },
+  content: {
+    type: Object,
     required: true,
   },
 })

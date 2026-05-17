@@ -1,9 +1,15 @@
 <template>
   <div class="flex flex-col gap-6">
     <div class="settings-card rounded-xl overflow-hidden">
-      <div class="card-header px-6 py-4 flex items-center gap-2">
-        <span class="material-symbols-outlined text-accent text-[20px]">tune</span>
-        <h3 class="font-bold" style="color: var(--text-heading)">Pengaturan Umum</h3>
+      <div class="card-header px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-accent text-[20px]">tune</span>
+          <h3 class="font-bold" style="color: var(--text-heading)">Pengaturan Umum</h3>
+        </div>
+        <button type="button" class="section-save-btn" :disabled="savingGeneral" @click="saveGeneralSettings">
+          <span class="material-symbols-outlined text-[16px]">save</span>
+          Simpan Umum
+        </button>
       </div>
       <div class="px-6 py-5 space-y-6">
         <div class="setting-row">
@@ -36,6 +42,84 @@
           </div>
         </div>
 
+        <div class="setting-row">
+          <div class="setting-label">
+            <h4 class="text-sm font-bold" style="color: var(--text-heading)">Brand Navbar Publik</h4>
+            <p class="text-xs mt-0.5" style="color: var(--text-muted)">Pilih tampilan teks seperti sekarang atau logo upload untuk navbar landing page.</p>
+          </div>
+          <div class="setting-control">
+            <div class="navbar-brand-control">
+              <div class="brand-mode-toggle">
+                <button type="button" :class="{ active: navbarBrandMode === 'text' }" @click="navbarBrandMode = 'text'">
+                  <span class="material-symbols-outlined text-[16px]">text_fields</span>
+                  Teks
+                </button>
+                <button type="button" :class="{ active: navbarBrandMode === 'logo' }" @click="navbarBrandMode = 'logo'">
+                  <span class="material-symbols-outlined text-[16px]">image</span>
+                  Logo
+                </button>
+              </div>
+              <div v-if="navbarBrandMode === 'text'" class="navbar-text-fields">
+                <label>
+                  <span>Icon Navbar</span>
+                  <VueMultiselect
+                    ref="navbarIconSelect"
+                    v-model="navbarTextIcon"
+                    :options="materialIconOptions"
+                    :searchable="true"
+                    :taggable="true"
+                    :close-on-select="true"
+                    :allow-empty="false"
+                    :show-labels="false"
+                    class="navbar-icon-select"
+                    placeholder="Pilih icon"
+                    @select="closeNavbarIconDropdown"
+                    @tag="addNavbarIcon"
+                  >
+                    <template #singleLabel="{ option }">
+                      <span class="icon-select-option">
+                        <span class="material-symbols-outlined">{{ option }}</span>
+                        <span>{{ option }}</span>
+                      </span>
+                    </template>
+                    <template #option="{ option }">
+                      <span class="icon-select-option">
+                        <span class="material-symbols-outlined">{{ option }}</span>
+                        <span>{{ option }}</span>
+                      </span>
+                    </template>
+                  </VueMultiselect>
+                </label>
+                <label>
+                  <span>Judul Navbar</span>
+                  <input v-model="navbarTextTitle" class="setting-input w-full rounded-lg py-2.5 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                </label>
+                <label>
+                  <span>Subtitle Navbar</span>
+                  <input v-model="navbarTextSubtitle" class="setting-input w-full rounded-lg py-2.5 px-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent" />
+                </label>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="navbar-logo-preview">
+                  <img v-if="navbarBrandMode === 'logo' && navbarLogoPreview" :src="navbarLogoPreview" alt="Logo navbar preview" />
+                  <div v-else class="text-preview text-preview-with-icon">
+                    <span class="preview-logo-icon material-symbols-outlined">{{ navbarTextIcon || 'auto_stories' }}</span>
+                    <span class="preview-logo-text">
+                      <strong>{{ navbarTextTitle || systemName || 'Sastra Arab' }}</strong>
+                      <span>{{ navbarTextSubtitle || 'Program Studi' }}</span>
+                    </span>
+                  </div>
+                </div>
+                <label v-if="navbarBrandMode === 'logo'" class="upload-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold cursor-pointer transition-all">
+                  <span class="material-symbols-outlined text-[16px]">cloud_upload</span>
+                  Upload Logo
+                  <input class="sr-only" type="file" accept=".png,.jpg,.jpeg,.svg,.webp,image/*" @change="handleNavbarLogoChange" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <Transition name="fade">
           <div v-if="generalMessage.text" class="message-box" :class="generalMessage.type">
             <span class="material-symbols-outlined text-[18px]">{{ generalMessage.type === 'success' ? 'check_circle' : 'error' }}</span>
@@ -45,10 +129,62 @@
       </div>
     </div>
 
+    <LandingSettings ref="landingSettingsRef" />
+
     <div class="settings-card rounded-xl overflow-hidden">
-      <div class="card-header px-6 py-4 flex items-center gap-2">
-        <span class="material-symbols-outlined text-accent text-[20px]">palette</span>
-        <h3 class="font-bold" style="color: var(--text-heading)">Warna Tema</h3>
+      <div class="card-header px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-accent text-[20px]">login</span>
+          <h3 class="font-bold" style="color: var(--text-heading)">Pengaturan Login</h3>
+        </div>
+        <button type="button" class="section-save-btn" :disabled="savingLogin" @click="saveLoginSettings">
+          <span class="material-symbols-outlined text-[16px]">save</span>
+          Simpan Login
+        </button>
+      </div>
+      <div class="px-6 py-5 space-y-6">
+        <div class="setting-row">
+          <div class="setting-label">
+            <h4 class="text-sm font-bold" style="color: var(--text-heading)">Gambar Panel Login</h4>
+            <p class="text-xs mt-0.5" style="color: var(--text-muted)">Gambar besar di sisi kiri halaman login desktop. Format: png, jpg, jpeg, atau webp.</p>
+          </div>
+          <div class="setting-control">
+            <div class="login-image-control">
+              <div class="login-image-preview">
+                <img v-if="loginImagePreview" :src="loginImagePreview" alt="Preview gambar login" />
+                <div v-else class="login-image-empty">
+                  <span class="material-symbols-outlined">image</span>
+                  <p>Belum ada gambar custom</p>
+                </div>
+              </div>
+              <label class="upload-btn flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold cursor-pointer transition-all">
+                <span class="material-symbols-outlined text-[16px]">cloud_upload</span>
+                Upload Gambar Login
+                <input class="sr-only" type="file" accept=".png,.jpg,.jpeg,.webp,image/*" @change="handleLoginImageChange" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <Transition name="fade">
+          <div v-if="loginMessage.text" class="message-box" :class="loginMessage.type">
+            <span class="material-symbols-outlined text-[18px]">{{ loginMessage.type === 'success' ? 'check_circle' : 'error' }}</span>
+            <span>{{ loginMessage.text }}</span>
+          </div>
+        </Transition>
+      </div>
+    </div>
+
+    <div class="settings-card rounded-xl overflow-hidden">
+      <div class="card-header px-6 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-accent text-[20px]">palette</span>
+          <h3 class="font-bold" style="color: var(--text-heading)">Warna Tema</h3>
+        </div>
+        <button type="button" class="section-save-btn" :disabled="savingGeneral" @click="saveGeneralSettings">
+          <span class="material-symbols-outlined text-[16px]">save</span>
+          Simpan Warna
+        </button>
       </div>
       <div class="px-6 py-5 space-y-6">
         <div class="setting-row">
@@ -58,7 +194,12 @@
           </div>
           <div class="setting-control">
             <div class="color-control">
-              <label class="color-picker-shell" :style="{ '--picked-color': selectedAccent }">
+              <label class="color-picker-shell" :style="{ '--picked-color': selectedAccent }" title="Pilih warna custom">
+                <span class="color-preview"></span>
+                <span class="color-picker-text">
+                  <span class="material-symbols-outlined text-[16px]">palette</span>
+                  Pilih Warna
+                </span>
                 <input v-model="selectedAccent" type="color" @input="applyAccentColor(selectedAccent)" />
               </label>
               <input
@@ -87,9 +228,15 @@
           <span class="material-symbols-outlined text-accent text-[20px]">outgoing_mail</span>
           <h3 class="font-bold" style="color: var(--text-heading)">Pengaturan Email SMTP</h3>
         </div>
-        <button type="button" class="toggle-switch" :class="{ active: emailForm.smtp_enabled }" @click="emailForm.smtp_enabled = !emailForm.smtp_enabled">
-          <span></span>
-        </button>
+        <div class="section-header-actions">
+          <button type="button" class="section-save-btn" :disabled="savingEmail" @click="saveEmailSettings">
+            <span class="material-symbols-outlined text-[16px]">save</span>
+            Simpan Email
+          </button>
+          <button type="button" class="toggle-switch" :class="{ active: emailForm.smtp_enabled }" @click="emailForm.smtp_enabled = !emailForm.smtp_enabled">
+            <span></span>
+          </button>
+        </div>
       </div>
       <div class="px-6 py-5 space-y-6">
         <div class="guide-panel">
@@ -229,14 +376,20 @@
           <span class="material-symbols-outlined text-accent text-[20px]">passkey</span>
           <h3 class="font-bold" style="color: var(--text-heading)">Login Google</h3>
         </div>
-        <button
-          type="button"
-          class="toggle-switch"
-          :class="{ active: googleForm.google_login_enabled }"
-          @click="googleForm.google_login_enabled = !googleForm.google_login_enabled"
-        >
-          <span></span>
-        </button>
+        <div class="section-header-actions">
+          <button type="button" class="section-save-btn" :disabled="savingGoogle" @click="saveGoogleSettings">
+            <span class="material-symbols-outlined text-[16px]">save</span>
+            Simpan Google
+          </button>
+          <button
+            type="button"
+            class="toggle-switch"
+            :class="{ active: googleForm.google_login_enabled }"
+            @click="googleForm.google_login_enabled = !googleForm.google_login_enabled"
+          >
+            <span></span>
+          </button>
+        </div>
       </div>
       <div class="px-6 py-5 space-y-6">
         <div class="guide-panel">
@@ -399,32 +552,55 @@
         :disabled="isSaving"
         @click="saveAllSettings"
       >
-        <span class="material-symbols-outlined text-[16px]">{{ isSaving ? 'progress_activity' : 'save' }}</span>
-        {{ isSaving ? 'Menyimpan...' : 'Simpan Pengaturan' }}
+        <span class="material-symbols-outlined text-[16px]">save</span>
+        Simpan Pengaturan
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import VueMultiselect from 'vue-multiselect'
+import 'vue-multiselect/dist/vue-multiselect.css'
 import api from '../../../axios'
+import { applyAccentColor as applyGlobalAccentColor } from '../../../utils/appearance'
+import { backendAssetUrl } from '../../../utils/asset'
+import LandingSettings from './LandingSettings.vue'
 
 const systemName = ref('Sastra Arab')
 const selectedAccent = ref('#2563eb')
 const faviconFile = ref(null)
 const faviconPreview = ref('')
+const navbarBrandMode = ref('text')
+const navbarTextIcon = ref('auto_stories')
+const navbarTextTitle = ref('Sastra Arab')
+const navbarTextSubtitle = ref('Program Studi')
+const navbarIconSelect = ref(null)
+const navbarLogoFile = ref(null)
+const navbarLogoPreview = ref('')
+const loginImageFile = ref(null)
+const loginImagePreview = ref('')
 const savingGeneral = ref(false)
+const savingLogin = ref(false)
 const savingEmail = ref(false)
 const savingGoogle = ref(false)
+const savingAll = ref(false)
 const googleRoles = ref([])
 const emailRoles = ref([])
-const isSaving = computed(() => savingGeneral.value || savingEmail.value || savingGoogle.value)
+const landingSettingsRef = ref(null)
+const isSaving = computed(() => savingAll.value || savingGeneral.value || savingLogin.value || savingEmail.value || savingGoogle.value)
+const SAVE_TIMEOUT_MS = 20000
+const MIN_LOADER_MS = 350
 const generalMessage = reactive({
   type: '',
   text: '',
 })
 const emailMessage = reactive({
+  type: '',
+  text: '',
+})
+const loginMessage = reactive({
   type: '',
   text: '',
 })
@@ -522,6 +698,37 @@ const accentColors = [
   { name: 'Rose', value: '#e11d48' },
   { name: 'Cyan', value: '#0891b2' }
 ]
+const materialIconOptions = [
+  'auto_stories',
+  'menu_book',
+  'school',
+  'translate',
+  'history_edu',
+  'record_voice_over',
+  'public',
+  'groups',
+  'diversity_3',
+  'science',
+  'forum',
+  'campaign',
+  'workspace_premium',
+  'star',
+  'support_agent',
+  'contact_support',
+  'handshake',
+  'event',
+]
+
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+async function finishLoader(startedAt) {
+  const elapsed = Date.now() - startedAt
+  if (elapsed < MIN_LOADER_MS) {
+    await wait(MIN_LOADER_MS - elapsed)
+  }
+}
 
 function isHexColor(value) {
   return /^#[0-9a-fA-F]{6}$/.test(value)
@@ -532,6 +739,7 @@ function applyAccentColor(value) {
 
   const root = document.querySelector('.admin-root, .author-root, .editor-root, .portal-root')
   root?.style.setProperty('--color-accent', value)
+  applyGlobalAccentColor(value)
 }
 
 function applyFavicon(url) {
@@ -549,7 +757,12 @@ function applyFavicon(url) {
 function fillGeneralForm(data) {
   systemName.value = data.system_name || 'Sastra Arab'
   selectedAccent.value = data.accent_color || '#2563eb'
-  faviconPreview.value = data.favicon_url || ''
+  faviconPreview.value = backendAssetUrl(data.favicon_path || data.favicon_url)
+  navbarBrandMode.value = data.navbar_brand_mode || 'text'
+  navbarTextIcon.value = data.navbar_text_icon || 'auto_stories'
+  navbarTextTitle.value = data.navbar_text_title || data.system_name || 'Sastra Arab'
+  navbarTextSubtitle.value = data.navbar_text_subtitle || 'Program Studi'
+  navbarLogoPreview.value = backendAssetUrl(data.navbar_logo_path || data.navbar_logo_url)
   applyAccentColor(selectedAccent.value)
   applyFavicon(faviconPreview.value)
 }
@@ -572,6 +785,50 @@ function handleFaviconChange(event) {
   faviconPreview.value = URL.createObjectURL(file)
 }
 
+function closeNavbarIconDropdown() {
+  const multiselect = navbarIconSelect.value
+  if (!multiselect) return
+
+  multiselect.deactivate?.()
+  multiselect.isOpen = false
+  if ('search' in multiselect) {
+    multiselect.search = ''
+  }
+  nextTick(() => {
+    multiselect.deactivate?.()
+    multiselect.isOpen = false
+  })
+  window.setTimeout(() => {
+    multiselect.deactivate?.()
+    multiselect.isOpen = false
+  }, 0)
+}
+
+function addNavbarIcon(value) {
+  if (!materialIconOptions.includes(value)) {
+    materialIconOptions.push(value)
+  }
+  navbarTextIcon.value = value
+  closeNavbarIconDropdown()
+}
+
+function handleNavbarLogoChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  navbarLogoFile.value = file
+  navbarLogoPreview.value = URL.createObjectURL(file)
+  navbarBrandMode.value = 'logo'
+}
+
+function handleLoginImageChange(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  loginImageFile.value = file
+  loginImagePreview.value = URL.createObjectURL(file)
+}
+
 async function loadGeneralSettings() {
   try {
     const { data } = await api.get('/settings/general')
@@ -583,12 +840,15 @@ async function loadGeneralSettings() {
 }
 
 async function saveGeneralSettings() {
+  if (savingGeneral.value) return false
+
   if (!isHexColor(selectedAccent.value)) {
     generalMessage.type = 'error'
     generalMessage.text = 'Warna aksen harus memakai format hex, contoh #2563eb.'
     return false
   }
 
+  const startedAt = Date.now()
   savingGeneral.value = true
   generalMessage.type = ''
   generalMessage.text = ''
@@ -596,8 +856,15 @@ async function saveGeneralSettings() {
   const formData = new FormData()
   formData.append('system_name', systemName.value)
   formData.append('accent_color', selectedAccent.value)
+  formData.append('navbar_brand_mode', navbarBrandMode.value)
+  formData.append('navbar_text_icon', navbarTextIcon.value)
+  formData.append('navbar_text_title', navbarTextTitle.value)
+  formData.append('navbar_text_subtitle', navbarTextSubtitle.value)
   if (faviconFile.value) {
     formData.append('favicon', faviconFile.value)
+  }
+  if (navbarLogoFile.value) {
+    formData.append('navbar_logo', navbarLogoFile.value)
   }
 
   try {
@@ -605,8 +872,10 @@ async function saveGeneralSettings() {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: SAVE_TIMEOUT_MS,
     })
     faviconFile.value = null
+    navbarLogoFile.value = null
     fillGeneralForm(data)
     generalMessage.type = 'success'
     generalMessage.text = 'Pengaturan umum berhasil disimpan.'
@@ -614,10 +883,65 @@ async function saveGeneralSettings() {
   } catch (error) {
     const errors = error.response?.data?.errors || {}
     generalMessage.type = 'error'
-    generalMessage.text = Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan umum.'
+    generalMessage.text = error.code === 'ECONNABORTED'
+      ? 'Menyimpan pengaturan umum terlalu lama. Coba ulangi atau cek koneksi backend.'
+      : Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan umum.'
     return false
   } finally {
+    await finishLoader(startedAt)
     savingGeneral.value = false
+  }
+}
+
+function fillLoginForm(data) {
+  loginImagePreview.value = backendAssetUrl(data.image_path || data.image_url)
+}
+
+async function loadLoginSettings() {
+  try {
+    const { data } = await api.get('/settings/login')
+    fillLoginForm(data)
+  } catch {
+    loginMessage.type = 'error'
+    loginMessage.text = 'Gagal memuat pengaturan login.'
+  }
+}
+
+async function saveLoginSettings() {
+  if (savingLogin.value) return false
+
+  const startedAt = Date.now()
+  savingLogin.value = true
+  loginMessage.type = ''
+  loginMessage.text = ''
+
+  const formData = new FormData()
+  if (loginImageFile.value) {
+    formData.append('login_image', loginImageFile.value)
+  }
+
+  try {
+    const { data } = await api.post('/settings/login', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: SAVE_TIMEOUT_MS,
+    })
+    loginImageFile.value = null
+    fillLoginForm(data)
+    loginMessage.type = 'success'
+    loginMessage.text = 'Pengaturan login berhasil disimpan.'
+    return true
+  } catch (error) {
+    const errors = error.response?.data?.errors || {}
+    loginMessage.type = 'error'
+    loginMessage.text = error.code === 'ECONNABORTED'
+      ? 'Menyimpan pengaturan login terlalu lama. Coba ulangi atau cek koneksi backend.'
+      : Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan login.'
+    return false
+  } finally {
+    await finishLoader(startedAt)
+    savingLogin.value = false
   }
 }
 
@@ -655,6 +979,9 @@ async function loadEmailSettings() {
 }
 
 async function saveEmailSettings() {
+  if (savingEmail.value) return false
+
+  const startedAt = Date.now()
   savingEmail.value = true
   emailMessage.type = ''
   emailMessage.text = ''
@@ -663,6 +990,8 @@ async function saveEmailSettings() {
     const { data } = await api.put('/settings/email', {
       ...emailForm,
       email_registration_default_role_id: emailForm.email_registration_default_role_id || null,
+    }, {
+      timeout: SAVE_TIMEOUT_MS,
     })
     fillEmailForm(data)
     emailMessage.type = 'success'
@@ -671,9 +1000,12 @@ async function saveEmailSettings() {
   } catch (error) {
     const errors = error.response?.data?.errors || {}
     emailMessage.type = 'error'
-    emailMessage.text = Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan email.'
+    emailMessage.text = error.code === 'ECONNABORTED'
+      ? 'Menyimpan pengaturan email terlalu lama. Coba ulangi atau cek koneksi backend.'
+      : Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan email.'
     return false
   } finally {
+    await finishLoader(startedAt)
     savingEmail.value = false
   }
 }
@@ -689,6 +1021,9 @@ async function loadGoogleSettings() {
 }
 
 async function saveGoogleSettings() {
+  if (savingGoogle.value) return false
+
+  const startedAt = Date.now()
   savingGoogle.value = true
   googleMessage.type = ''
   googleMessage.text = ''
@@ -697,29 +1032,53 @@ async function saveGoogleSettings() {
     const { data } = await api.put('/settings/google-login', {
       ...googleForm,
       google_default_role_id: googleForm.google_default_role_id || null,
+    }, {
+      timeout: SAVE_TIMEOUT_MS,
     })
     fillGoogleForm(data)
     googleMessage.type = 'success'
     googleMessage.text = 'Pengaturan Login Google berhasil disimpan.'
+    return true
   } catch (error) {
     const errors = error.response?.data?.errors || {}
     googleMessage.type = 'error'
-    googleMessage.text = Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan Login Google.'
+    googleMessage.text = error.code === 'ECONNABORTED'
+      ? 'Menyimpan pengaturan Login Google terlalu lama. Coba ulangi atau cek koneksi backend.'
+      : Object.values(errors)?.[0]?.[0] || 'Gagal menyimpan pengaturan Login Google.'
+    return false
   } finally {
+    await finishLoader(startedAt)
     savingGoogle.value = false
   }
 }
 
 async function saveAllSettings() {
-  const generalSaved = await saveGeneralSettings()
-  if (generalSaved) {
-    await saveEmailSettings()
-    await saveGoogleSettings()
+  if (isSaving.value) return
+
+  savingAll.value = true
+
+  try {
+    const generalSaved = await saveGeneralSettings()
+    if (generalSaved) {
+      const landingSaved = await landingSettingsRef.value?.saveLandingSettings?.() ?? true
+      if (!landingSaved) return
+
+      const loginSaved = await saveLoginSettings()
+      if (loginSaved) {
+        const emailSaved = await saveEmailSettings()
+        if (emailSaved) {
+          await saveGoogleSettings()
+        }
+      }
+    }
+  } finally {
+    savingAll.value = false
   }
 }
 
 onMounted(() => {
   loadGeneralSettings()
+  loadLoginSettings()
   loadEmailSettings()
   loadGoogleSettings()
 })
@@ -728,6 +1087,43 @@ onMounted(() => {
 <style scoped>
 .settings-card { background: var(--bg-card); border: 1px solid var(--border); }
 .card-header { border-bottom: 1px solid var(--border); }
+.section-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.section-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 26%, var(--border));
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--bg-input));
+  color: var(--text-heading);
+  cursor: pointer;
+  padding: 0 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.section-save-btn:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--text-btn);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-accent) 24%, transparent);
+  transform: translateY(-1px);
+}
+.section-save-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.section-save-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
 .guide-panel {
   border: 1px solid var(--border);
   border-radius: 1rem;
@@ -826,6 +1222,16 @@ onMounted(() => {
   opacity: 0.76;
 }
 .setting-row { display: flex; flex-direction: column; gap: 0.75rem; }
+@media (max-width: 767px) {
+  .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .section-header-actions,
+  .section-save-btn {
+    width: 100%;
+  }
+}
 @media (min-width: 768px) {
   .setting-row { flex-direction: row; align-items: flex-start; }
   .setting-label { width: 280px; flex-shrink: 0; padding-top: 0.5rem; }
@@ -852,20 +1258,51 @@ onMounted(() => {
 .color-picker-shell {
   position: relative;
   display: inline-flex;
-  width: 3rem;
+  width: fit-content;
+  min-width: 10.25rem;
   height: 3rem;
+  align-items: center;
+  gap: 0.7rem;
   cursor: pointer;
   overflow: hidden;
   border-radius: 0.9rem;
   border: 2px solid var(--border);
-  background: var(--picked-color);
+  background: var(--bg-input);
+  padding: 0 0.9rem 0 0.5rem;
   box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.color-picker-shell:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--color-accent) 20%, transparent);
+  transform: translateY(-1px);
+}
+.color-preview {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border-radius: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--picked-color) 38%, white);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent),
+    var(--picked-color);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.color-picker-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-heading);
+  font-size: 0.84rem;
+  font-weight: 900;
+  white-space: nowrap;
 }
 .color-picker-shell input {
   position: absolute;
-  inset: -0.5rem;
-  width: 4rem;
-  height: 4rem;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   cursor: pointer;
   opacity: 0;
 }
@@ -878,6 +1315,182 @@ onMounted(() => {
   border: 1px solid var(--border);
 }
 .upload-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.login-image-control {
+  display: grid;
+  gap: 1rem;
+}
+.login-image-preview {
+  display: flex;
+  width: min(28rem, 100%);
+  aspect-ratio: 16 / 9;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px dashed color-mix(in srgb, var(--color-accent) 38%, var(--border));
+  border-radius: 1rem;
+  background: var(--bg-input);
+}
+.login-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.login-image-empty {
+  display: grid;
+  gap: 0.45rem;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+.login-image-empty .material-symbols-outlined {
+  color: var(--color-accent);
+  font-size: 2rem;
+}
+.navbar-brand-control {
+  display: grid;
+  gap: 1rem;
+}
+.brand-mode-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  width: min(18rem, 100%);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--bg-input);
+  padding: 0.3rem;
+}
+.brand-mode-toggle button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  border-radius: 0.55rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 900;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.brand-mode-toggle button:hover {
+  color: var(--text-heading);
+  transform: translateY(-1px);
+}
+.brand-mode-toggle button.active {
+  background: var(--color-accent);
+  color: var(--text-btn);
+}
+.navbar-text-fields {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 34rem;
+}
+.navbar-text-fields label {
+  display: grid;
+  gap: 0.4rem;
+}
+.navbar-text-fields span {
+  color: var(--text-heading);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+.navbar-icon-select {
+  min-height: 42px;
+}
+.navbar-icon-select :deep(.multiselect__tags) {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-input);
+  padding: 7px 40px 0 12px;
+}
+.navbar-icon-select.multiselect--active :deep(.multiselect__tags) {
+  border-color: var(--color-accent);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+.navbar-icon-select :deep(.multiselect__single),
+.navbar-icon-select :deep(.multiselect__input),
+.navbar-icon-select :deep(.multiselect__placeholder) {
+  min-height: 24px;
+  margin: 0;
+  background: transparent;
+  color: var(--text-heading);
+  font-size: 0.875rem;
+  line-height: 24px;
+}
+.navbar-icon-select :deep(.multiselect__placeholder) {
+  color: var(--text-muted);
+}
+.navbar-icon-select :deep(.multiselect__content-wrapper) {
+  border-color: var(--border);
+  background: var(--bg-card);
+}
+.navbar-icon-select :deep(.multiselect__option--highlight) {
+  background: var(--color-accent);
+}
+.icon-select-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.icon-select-option .material-symbols-outlined {
+  color: var(--color-accent);
+  font-size: 1.15rem;
+}
+.navbar-logo-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10.5rem;
+  height: 4.25rem;
+  overflow: hidden;
+  border: 2px dashed color-mix(in srgb, var(--color-accent) 40%, var(--border));
+  border-radius: 0.9rem;
+  background: var(--bg-input);
+}
+.navbar-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.55rem;
+}
+.navbar-logo-preview .text-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  text-align: left;
+}
+.navbar-logo-preview .preview-logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 42%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+  font-size: 1.25rem;
+}
+.navbar-logo-preview .preview-logo-text {
+  display: grid;
+  gap: 0.15rem;
+}
+.navbar-logo-preview strong {
+  color: var(--text-heading);
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+.navbar-logo-preview span {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
 .save-bar {
   background: var(--bg-card);
   border: 1px solid var(--border);

@@ -53,13 +53,20 @@ class News extends Model
 
     public static function findBySlugOrId(string $identifier): ?self
     {
-        $query = static::query()->where('slug', $identifier);
+        $news = static::query()->where('slug', $identifier)->first();
 
-        if (ctype_digit($identifier)) {
-            $query->orWhereKey((int) $identifier);
+        if ($news) {
+            return $news;
         }
 
-        return $query->first();
+        if (ctype_digit($identifier)) {
+            return static::query()->find((int) $identifier);
+        }
+
+        return static::query()
+            ->whereNull('slug')
+            ->get()
+            ->first(fn (News $news) => Str::slug($news->title) === $identifier);
     }
 
     public static function uniqueSlug(string $value, ?int $ignoreId = null): string

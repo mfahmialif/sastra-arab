@@ -3,10 +3,10 @@
     <div class="mx-auto max-w-7xl px-5 lg:px-8">
       <div class="section-head" data-aos="fade-up">
         <div>
-          <p class="section-kicker">Sastra Arab Update</p>
-          <h2 class="section-title mt-4">Berita, kegiatan, dan informasi prodi.</h2>
+          <p class="section-kicker">{{ content.kicker }}</p>
+          <h2 class="section-title mt-4">{{ content.title }}</h2>
           <p class="mt-5 max-w-2xl leading-8 text-slate-600">
-            Kanal update dipakai untuk mengabarkan agenda akademik, kegiatan mahasiswa, informasi layanan, dan pengumuman prodi.
+            {{ content.description }}
           </p>
         </div>
 
@@ -18,7 +18,7 @@
             <span class="material-symbols-outlined">arrow_forward</span>
           </button>
           <router-link to="/news" class="cta-primary">
-            Semua News
+            {{ content.button_label }}
             <span class="material-symbols-outlined text-[20px]">newspaper</span>
           </router-link>
         </div>
@@ -39,7 +39,7 @@
         >
           <SwiperSlide v-for="(item, index) in updates" :key="item.id || item.title">
             <article class="news-update-card group">
-              <router-link :to="item.href || (item.id ? `/news/${item.id}` : '/news')" class="block">
+              <router-link :to="newsHref(item)" class="block">
                 <div class="news-update-image">
                   <img :src="item.image || fallbackImage(index)" :alt="item.title" />
                   <div class="news-update-shade"></div>
@@ -78,6 +78,10 @@ defineProps({
     type: Array,
     required: true,
   },
+  content: {
+    type: Object,
+    required: true,
+  },
 })
 
 const swiperModules = [Autoplay, Navigation, Pagination]
@@ -99,5 +103,12 @@ const swiperBreakpoints = {
 
 function fallbackImage(index) {
   return fallbackImages[index % fallbackImages.length]
+}
+
+function newsHref(item) {
+  if (item?.slug) return `/news/${encodeURIComponent(item.slug)}`
+  if (item?.href) return item.href
+  if (item?.id) return `/news/${encodeURIComponent(item.id)}`
+  return '/news'
 }
 </script>

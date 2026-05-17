@@ -25,7 +25,8 @@ import NewsGrid from './_Grid.vue'
 import NewsHero from './_Hero.vue'
 import NewsPagination from './_Pagination.vue'
 import NewsToolbar from './_Toolbar.vue'
-import { normalizeNews } from './utils'
+import { newsDetailPath, normalizeNews } from './utils'
+import { applySeo } from '../../../utils/seo'
 
 const router = useRouter()
 const newsItems = ref([])
@@ -93,7 +94,7 @@ function goToPage(page) {
 }
 
 function openDetail(item) {
-  router.push({ name: 'DetailNews', params: { id: item.slug || item.id } })
+  router.push(newsDetailPath(item))
 }
 
 watch(searchQuery, () => {
@@ -106,6 +107,12 @@ watch(searchQuery, () => {
 
 onMounted(() => {
   AOS.init({ duration: 780, easing: 'ease-out-cubic', once: true, offset: 80 })
+  applySeo({
+    title: 'News - Sastra Arab',
+    description: 'Berita, kegiatan, dan informasi terbaru Program Studi Sastra Arab.',
+    image: '/img/news/news1.jpg',
+    url: window.location.href,
+  })
   loadCategories()
   loadNews()
 })

@@ -1,6 +1,6 @@
 <template>
   <footer class="footer-bar flex items-center justify-center px-8 py-4 transition-colors duration-500">
-    <p class="text-muted text-xs font-medium">Sastra Arab &copy; {{ currentYear }}</p>
+    <p class="text-muted text-xs font-medium">{{ appName }} &copy; {{ currentYear }}</p>
   </footer>
 </template>
 
@@ -8,6 +8,7 @@
 import { computed } from 'vue'
 
 const currentYear = computed(() => new Date().getFullYear())
+const appName = import.meta.env.VITE_APP_NAME || ''
 </script>
 
 <style scoped>

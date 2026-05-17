@@ -143,6 +143,12 @@ const routes = [
         meta: { title: `${appName} - Manajemen Menu`, pageTitle: 'Manajemen Menu', requiresAuth: true }
       },
       {
+        path: 'logs',
+        name: 'AdminLogs',
+        component: () => import('../views/admin/logs/Index.vue'),
+        meta: { title: `${appName} - Log Aktivitas`, pageTitle: 'Log Aktivitas', requiresAuth: true }
+      },
+      {
         path: 'info-terkini',
         redirect: '/administrator/news'
       },

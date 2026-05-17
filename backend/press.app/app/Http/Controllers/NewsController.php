@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\News;
 use App\Models\NewsCategory;
 use App\Models\User;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class NewsController extends Controller
 {
@@ -56,14 +58,17 @@ class NewsController extends Controller
         }
 
         $perPage = $request->input('per_page', 6);
+        $news = $query->paginate($perPage);
+        $news->getCollection()->each(fn (News $item) => $this->ensureSlug($item));
 
-        return $query->paginate($perPage);
+        return $news;
     }
 
     public function show(string $news)
     {
         $news = News::findBySlugOrId($news);
         abort_unless($news, 404);
+        $this->ensureSlug($news);
 
         return response()->json($news->load(['category', 'categories', 'author:id,name,email', 'creator:id,name,email']));
     }
@@ -80,6 +85,7 @@ class NewsController extends Controller
     {
         $request->validate([
             'title'    => 'required|string|max:255',
+            'slug'     => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('news', 'slug')],
             'news_category_id' => 'required_without:news_category_ids|nullable|exists:news_categories,id',
             'news_category_ids' => 'required_without:news_category_id|array|min:1',
             'news_category_ids.*' => 'exists:news_categories,id',
@@ -92,7 +98,7 @@ class NewsController extends Controller
         $this->ensureNewsAuthor($request->input('author_id'));
 
         $categoryIds = $this->categoryIds($request);
-        $data = $request->only(['title', 'author_id', 'body', 'speaker', 'duration', 'status']);
+        $data = $request->only(['title', 'slug', 'author_id', 'body', 'speaker', 'duration', 'status']);
         $data['news_category_id'] = $categoryIds[0];
         $data['created_by'] = $request->user()?->id;
 
@@ -105,6 +111,10 @@ class NewsController extends Controller
 
         $news = News::create($data);
         $news->categories()->sync($categoryIds);
+        $this->logNewsActivity($request, 'created', $news, [
+            'status' => $news->status,
+            'category_ids' => $categoryIds,
+        ]);
 
         return response()->json($news->load(['category', 'categories', 'author:id,name,email', 'creator:id,name,email']), 201);
     }
@@ -113,6 +123,7 @@ class NewsController extends Controller
     {
         $request->validate([
             'title'    => 'required|string|max:255',
+            'slug'     => ['nullable', 'string', 'max:255', 'alpha_dash', Rule::unique('news', 'slug')->ignore($news->id)],
             'news_category_id' => 'required_without:news_category_ids|nullable|exists:news_categories,id',
             'news_category_ids' => 'required_without:news_category_id|array|min:1',
             'news_category_ids.*' => 'exists:news_categories,id',
@@ -125,7 +136,7 @@ class NewsController extends Controller
         $this->ensureNewsAuthor($request->input('author_id'));
 
         $categoryIds = $this->categoryIds($request);
-        $data = $request->only(['title', 'author_id', 'body', 'speaker', 'duration', 'status']);
+        $data = $request->only(['title', 'slug', 'author_id', 'body', 'speaker', 'duration', 'status']);
         $data['news_category_id'] = $categoryIds[0];
 
         if ($request->hasFile('image')) {
@@ -145,17 +156,30 @@ class NewsController extends Controller
             $data['video_path'] = null;
         }
 
+        $before = $news->only(['title', 'slug', 'body', 'status', 'author_id', 'news_category_id', 'image_path', 'video_path']);
         $news->update($data);
         $news->categories()->sync($categoryIds);
+        $after = $news->fresh()->only(['title', 'slug', 'body', 'status', 'author_id', 'news_category_id', 'image_path', 'video_path']);
+        $this->logNewsActivity($request, 'updated', $news, [
+            'before' => $before,
+            'after' => $after,
+            'category_ids' => $categoryIds,
+        ]);
 
         return response()->json($news->load(['category', 'categories', 'author:id,name,email', 'creator:id,name,email']));
     }
 
-    public function destroy(News $news)
+    public function destroy(Request $request, News $news)
     {
+        $title = $news->title;
+        $newsId = $news->id;
         if ($news->image_path) Storage::disk('public')->delete($news->image_path);
         if ($news->video_path) Storage::disk('public')->delete($news->video_path);
         $news->delete();
+        $this->logNewsActivity($request, 'deleted', null, [
+            'news_id' => $newsId,
+            'title' => $title,
+        ], $title, $newsId);
         return response()->json(['message' => 'Konten berhasil dihapus.']);
     }
 
@@ -241,5 +265,37 @@ class NewsController extends Controller
             ->unique()
             ->values()
             ->all();
+    }
+
+    private function logNewsActivity(Request $request, string $action, ?News $news = null, array $properties = [], ?string $title = null, ?int $subjectId = null): void
+    {
+        $subjectTitle = $title ?: $news?->title;
+        $descriptions = [
+            'created' => 'menambahkan berita',
+            'updated' => 'mengedit berita',
+            'deleted' => 'menghapus berita',
+        ];
+
+        ActivityLog::query()->create([
+            'user_id' => $request->user()?->id,
+            'module' => 'news',
+            'action' => $action,
+            'subject_type' => News::class,
+            'subject_id' => $subjectId ?: $news?->id,
+            'subject_title' => $subjectTitle,
+            'description' => trim(($request->user()?->name ?: 'User') . ' ' . ($descriptions[$action] ?? $action) . ($subjectTitle ? ': ' . $subjectTitle : '')),
+            'properties' => $properties,
+        ]);
+    }
+
+    private function ensureSlug(News $news): void
+    {
+        if ($news->slug || ! $news->title) {
+            return;
+        }
+
+        $news->forceFill([
+            'slug' => News::uniqueSlug($news->title, $news->id),
+        ])->saveQuietly();
     }
 }

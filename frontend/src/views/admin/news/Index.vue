@@ -23,19 +23,19 @@
     </div>
 
     <!-- ═══ FILTERS BAR ═══ -->
-    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
-      <div class="relative w-full lg:w-[400px]">
-        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-accent text-[20px] z-10">search</span>
-        <input v-model="searchQuery" @input="debouncedFetch" class="filter-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Cari news..." type="text" />
-      </div>
-      <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 lg:gap-4">
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-medium shrink-0" style="color: var(--text-body)">Kategori:</span>
-          <VueMultiselect v-model="filterCategory" :options="categoryOptions" :close-on-select="true" :searchable="false" :allow-empty="false" :show-labels="false" label="name" track-by="value" @select="fetchData" class="flex-1 sm:w-[160px] sm:flex-none" />
+    <div class="filter-panel rounded-2xl p-4">
+      <div class="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto_auto] lg:items-center">
+        <div class="relative min-w-0">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-accent text-[20px] z-10">search</span>
+          <input v-model="searchQuery" @input="debouncedFetch" class="filter-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-accent" placeholder="Cari news..." type="text" />
         </div>
-        <div class="flex items-center gap-2">
+        <div class="filter-control">
+          <span class="text-sm font-medium shrink-0" style="color: var(--text-body)">Kategori:</span>
+          <VueMultiselect v-model="filterCategory" :options="categoryOptions" :close-on-select="true" :searchable="false" :allow-empty="false" :show-labels="false" label="name" track-by="value" @select="fetchData" class="filter-multiselect" />
+        </div>
+        <div class="filter-control">
           <span class="text-sm font-medium shrink-0" style="color: var(--text-body)">Status:</span>
-          <VueMultiselect v-model="filterStatus" :options="statusOptions" :close-on-select="true" :searchable="false" :allow-empty="false" :show-labels="false" label="name" track-by="value" @select="fetchData" class="flex-1 sm:w-[150px] sm:flex-none" />
+          <VueMultiselect v-model="filterStatus" :options="statusOptions" :close-on-select="true" :searchable="false" :allow-empty="false" :show-labels="false" label="name" track-by="value" @select="fetchData" class="filter-multiselect" />
         </div>
       </div>
     </div>
@@ -48,7 +48,7 @@
     <!-- ═══ CONTENT TABLE ═══ -->
     <div v-else class="table-wrapper rounded-xl overflow-hidden shadow-2xl">
       <div class="overflow-x-auto p-2">
-        <table class="w-full text-left border-collapse">
+        <table class="min-w-[980px] w-full text-left border-collapse">
           <thead><tr class="table-head">
             <th class="px-4 py-4 text-sm font-semibold w-16" style="color: var(--text-heading)">#</th>
             <th class="px-4 py-4 text-sm font-semibold" style="color: var(--text-heading)">Thumbnail</th>
@@ -280,10 +280,13 @@ onMounted(async () => { await fetchCategories(); fetchData(); fetchStats() })
 </script>
 
 <style scoped>
-.filter-input { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-heading); transition: box-shadow 0.3s ease; }
+.filter-panel { background: var(--bg-card); border: 1px solid var(--border); }
+.filter-control { display: grid; grid-template-columns: auto minmax(0, 12rem); align-items: center; gap: 0.65rem; }
+.filter-input { min-height: 2.75rem; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-heading); transition: box-shadow 0.3s ease; }
 .filter-input::placeholder { color: var(--text-muted); }
 .filter-input:hover { box-shadow: 0 0 15px rgba(37, 99, 235, 0.15); }
 .filter-input:focus { border-color: var(--color-accent); box-shadow: 0 0 12px rgba(37, 99, 235, 0.3); }
+.filter-multiselect { width: 12rem; min-width: 0; }
 .action-btn { color: var(--text-muted); }
 .action-btn:hover { color: var(--color-accent); background: var(--bg-input); }
 .action-btn-delete:hover { color: #f87171; background: var(--bg-input); }
@@ -303,4 +306,9 @@ onMounted(async () => { await fetchCategories(); fetchData(); fetchStats() })
 .toast-leave-active { animation: toastOut 0.2s ease-in; }
 @keyframes toastIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateX(100px); } }
+
+@media (max-width: 1023px) {
+  .filter-control { grid-template-columns: 1fr; gap: 0.45rem; }
+  .filter-multiselect { width: 100%; }
+}
 </style>
