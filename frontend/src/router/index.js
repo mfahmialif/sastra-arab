@@ -14,7 +14,7 @@ import KepalaPenulisLayout from '../layouts/KepalaPenulisLayout.vue'
 import AdminDashboard from '../views/admin/dashboard/Index.vue'
 import { useAuthStore } from '../stores/auth'
 
-const appName = 'Sastra Arab'
+const appName = import.meta.env.VITE_APP_NAME || 'Sastra Arab'
 
 const routes = [
   {

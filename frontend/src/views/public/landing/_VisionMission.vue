@@ -1,5 +1,5 @@
 <template>
-  <section id="vision-mission" class="vision-mission-section bg-white py-16">
+  <section id="vision-mission" class="vision-mission-section py-16">
     <div class="mx-auto max-w-7xl px-5 lg:px-8">
       <div class="section-head" data-aos="fade-up">
         <div>

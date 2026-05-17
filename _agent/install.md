@@ -238,6 +238,20 @@ php artisan migrate:f --seed
 
 ---
 
+## File yang perlu diedit: 
+
+backend/press.app/.env
+backend/press.app/.env.production
+backend/press.app/app/Http/Controllers/SettingController.php
+backend/press.app/database/seeders/MenuPageSeeder.php
+backend/press.app/database/seeders/NewsSeeder.php
+backend/press.app/database/seeders/SettingSeeder.php
+frontend/.env.development
+frontend/.env.production
+frontend/index.html
+
+---
+
 # Catatan Penting
 
 - AI tidak boleh langsung coding sebelum setup selesai
